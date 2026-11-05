@@ -92,7 +92,7 @@ class TableOrderPayments
                 ])->values()->all(),
                 'table_order_ids' => [$order->id],
                 'serve_table_orders' => false,
-            ]);
+            ], pricesVerified: true);
 
             if ($error !== null) {
                 return $error;

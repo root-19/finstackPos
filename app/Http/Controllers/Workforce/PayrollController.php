@@ -11,6 +11,7 @@ use App\Models\PayrollRun;
 use App\Models\SalaryRate;
 use App\Services\Payroll\PayrollService;
 use Illuminate\Http\RedirectResponse;
+use App\Support\Csv;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -165,12 +166,12 @@ class PayrollController extends Controller
 
             foreach ($run->items->sortBy(fn ($i) => $i->employee->name) as $item) {
                 $row = self::presentItem($item);
-                fputcsv($out, [
+                fputcsv($out, Csv::row([
                     $row['employee'], "{$run->period_start->toDateString()} to {$run->period_end->toDateString()}", $run->status,
                     $peso($row['basic_cents']), $peso($row['earnings_cents']), $peso($row['gross_cents']),
                     $peso($row['sss_cents']), $peso($row['philhealth_cents']), $peso($row['pagibig_cents']), $peso($row['tax_cents']),
                     $peso($row['other_deductions_cents']), $peso($row['deductions_cents']), $peso($row['net_cents']), $peso($row['employer_cents']),
-                ]);
+                ]));
             }
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv']);

@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class SyncController extends Controller
 {
@@ -88,10 +89,10 @@ class SyncController extends Controller
                 'client_uuid' => ['required', 'uuid'],
                 // Where the POS was set to sell; sales queued before branches have none.
                 'branch_id' => ['nullable', 'integer'],
-                'sold_at' => ['required', 'date', 'before_or_equal:'.now()->addMinutes(10)->toIso8601String()],
+                'sold_at' => ['required', 'date', 'after:'.now()->subYear()->toIso8601String(), 'before_or_equal:'.now()->addMinutes(10)->toIso8601String()],
                 'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
                 'payment_reference' => ['nullable', 'string', 'max:100', 'required_if:payment_method,'.PaymentMethod::QrPh->value],
-                'amount_paid_cents' => ['required', 'integer', 'min:0'],
+                'amount_paid_cents' => ['required', 'integer', 'min:0', 'max:9999999999'],
                 'discount_type' => ['nullable', Rule::in(['senior', 'pwd'])],
                 'discount_id_number' => ['nullable', 'required_with:discount_type', 'string', 'max:50'],
                 'discount_customer_name' => ['nullable', 'required_with:discount_type', 'string', 'max:100'],
@@ -104,7 +105,7 @@ class SyncController extends Controller
                 // A product may appear on several lines with different options.
                 'items.*.product_id' => ['required', 'integer'],
                 'items.*.quantity' => ['required', 'integer', 'min:1', 'max:9999'],
-                'items.*.unit_price_cents' => ['required', 'integer', 'min:0'],
+                'items.*.unit_price_cents' => ['required', 'integer', 'min:0', 'max:999999999'],
                 'items.*.options' => ['nullable', 'array', 'max:20'],
                 'items.*.options.*.group' => ['required', 'string', 'max:60'],
                 'items.*.options.*.value' => ['required', 'string', 'max:60'],
@@ -122,7 +123,15 @@ class SyncController extends Controller
             // cashier tied to a branch always sells there, an unknown branch
             // falls back to the main one.
             $branchId = Branch::forUser($user, $data['branch_id'] ?? null, activeOnly: false)->id;
-            $error = $this->sales->record($merchant, $user, $branchId, $data);
+
+            try {
+                $error = $this->sales->record($merchant, $user, $branchId, $data);
+            } catch (Throwable $e) {
+                // One sale that cannot be stored must never block the queue
+                // behind it: it goes to the register's "needs review" list.
+                report($e);
+                $error = 'This sale could not be stored. Try again; if it keeps failing, contact support.';
+            }
 
             if ($error === null) {
                 $synced[] = $uuid;

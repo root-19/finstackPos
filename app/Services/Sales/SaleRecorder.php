@@ -41,7 +41,7 @@ class SaleRecorder
      * @param  array<string, mixed>  $data  client_uuid, sold_at, payment_method, payment_reference?, amount_paid_cents,
      *                                      discount_*?, items[], table_order_ids?, serve_table_orders?
      */
-    public function record(Merchant $merchant, ?User $user, int $branchId, array $data): ?string
+    public function record(Merchant $merchant, ?User $user, int $branchId, array $data, bool $pricesVerified = false): ?string
     {
         if (Sale::withoutGlobalScopes()->where('merchant_id', $merchant->id)->where('client_uuid', $data['client_uuid'])->exists()) {
             return null;
@@ -52,10 +52,24 @@ class SaleRecorder
         // This store's products only; trashed ones still count so a sale made
         // before a product was deleted can be stored.
         $productIds = $items->pluck('product_id')->unique();
-        $products = Product::withoutGlobalScopes()->where('merchant_id', $merchant->id)->whereKey($productIds)->get()->keyBy('id');
+        $products = Product::withoutGlobalScopes()->with('sizes')->where('merchant_id', $merchant->id)->whereKey($productIds)->get()->keyBy('id');
 
         if ($products->count() !== $productIds->count()) {
             return 'The sale contains products that do not belong to this store.';
+        }
+
+        // A register's prices are only ever the catalog's: the product's own
+        // price or one of its sizes' (orders placed from a table were priced
+        // here already).
+        if (! $pricesVerified) {
+            foreach ($items as $item) {
+                $product = $products[$item['product_id']];
+                $allowed = $product->sizes->pluck('price_cents')->push($product->price_cents);
+
+                if (! $allowed->contains((int) $item['unit_price_cents'])) {
+                    return "The price of {$product->name} does not match the catalog. Refresh the catalog and ring it up again.";
+                }
+            }
         }
 
         $lines = $items->map(fn (array $item) => [
@@ -143,8 +157,17 @@ class SaleRecorder
 
                 $this->settleTableOrders($merchant, $sale, $data['table_order_ids'] ?? [], $data['serve_table_orders'] ?? true);
             });
-        } catch (UniqueConstraintViolationException) {
-            // A concurrent request stored the same sale first.
+        } catch (UniqueConstraintViolationException $e) {
+            // Only a duplicate of this very sale (a concurrent request stored
+            // it first) is a no-op; any other clash must not be mistaken for one.
+            $stored = Sale::withoutGlobalScopes()
+                ->where('merchant_id', $merchant->id)
+                ->where('client_uuid', $data['client_uuid'])
+                ->exists();
+
+            if (! $stored) {
+                throw $e;
+            }
         } catch (RuntimeException $e) {
             return $e->getMessage();
         }

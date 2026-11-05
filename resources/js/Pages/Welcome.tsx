@@ -1,5 +1,4 @@
 import InstallAppButton from '@/Components/InstallAppButton';
-import DashboardPreview from '@/Components/Landing/DashboardPreview';
 import LineIcon, { IconName } from '@/Components/Landing/LineIcon';
 import Reveal from '@/Components/Landing/Reveal';
 import Showcase from '@/Components/Landing/Showcase';
@@ -297,7 +296,16 @@ export default function Welcome({
                             />
                             <div ref={heroVisual} className="mx-auto max-w-5xl [transform:translateY(var(--parallax,0px))]">
                                 <div className="animate-rise [animation-delay:420ms]">
-                                    <DashboardPreview />
+                                    <video
+                                        className="w-full rounded-2xl bg-gray-950 shadow-2xl shadow-red-900/20 ring-1 ring-black/10"
+                                        src="/FinstackPOS-Promo-v2.mp4"
+                                        autoPlay
+                                        muted
+                                        loop
+                                        playsInline
+                                        preload="metadata"
+                                        aria-label="FinstackPOS promo video"
+                                    />
                                 </div>
                             </div>
                         </Container>

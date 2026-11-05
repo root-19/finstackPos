@@ -83,3 +83,18 @@ test('correct password must be provided to delete account', function () {
 
     $this->assertNotNull($user->fresh());
 });
+
+test('the store owner cannot delete their own account', function () {
+    $owner = User::factory()->make();
+    $owner->merchant()->associate(\App\Models\Merchant::factory()->create());
+    $owner->role = \App\Enums\UserRole::Owner;
+    $owner->save();
+
+    $this->actingAs($owner)
+        ->from('/profile')
+        ->delete('/profile', ['password' => 'password'])
+        ->assertSessionHasErrors('password')
+        ->assertRedirect('/profile');
+
+    $this->assertNotNull($owner->fresh());
+});

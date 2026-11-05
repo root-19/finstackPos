@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,6 +51,14 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        // The owner's login is the store: without it nobody can reach
+        // Settings, staff, payroll or billing. Admin accounts likewise.
+        if ($user->isOwner() || $user->isAdmin()) {
+            throw ValidationException::withMessages([
+                'password' => "The store owner's account can't be deleted while it owns the store. Contact support to close the store.",
+            ]);
+        }
 
         Auth::logout();
 

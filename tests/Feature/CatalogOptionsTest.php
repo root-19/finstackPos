@@ -190,6 +190,7 @@ test('non-image uploads are rejected', function () {
 test('synced sales record the chosen size at its own price, even for the same product twice', function () {
     $user = catalogOwner();
     $product = Product::factory()->for($user->merchant)->create(['price_cents' => 10000, 'stock' => 10]);
+    $product->syncSizes([['name' => 'Small', 'price' => 100], ['name' => 'Large', 'price' => 170]]);
 
     $this->actingAs($user)->postJson('/pos/sync/sales', ['sales' => [[
         'client_uuid' => (string) Str::uuid(),

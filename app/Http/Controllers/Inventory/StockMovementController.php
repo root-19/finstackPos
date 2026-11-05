@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\InventoryItem;
 use App\Models\StockMovement;
+use App\Support\Csv;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -52,12 +53,12 @@ class StockMovementController extends Controller
             fputcsv($out, ['Date', 'Branch', 'Item', 'Type', 'Change', 'Unit', 'On hand after', 'Unit cost', 'Total cost', 'Supplier', 'Reference', 'Note', 'By']);
             foreach ($rows as $m) {
                 $p = $this->present($m, $request);
-                fputcsv($out, [
+                fputcsv($out, Csv::row([
                     $p['at'], $p['branch'], $p['item'], $p['type'], $p['quantity_change'], $p['unit'], $p['quantity_after'],
                     $p['unit_cost_cents'] !== null ? number_format($p['unit_cost_cents'] / 100, 4, '.', '') : '',
                     $p['total_cost_cents'] !== null ? number_format($p['total_cost_cents'] / 100, 2, '.', '') : '',
                     $p['supplier'], $p['reference'], $p['note'], $p['user'],
-                ]);
+                ]));
             }
             fclose($out);
         }, "stock-history-{$filters['from']}-to-{$filters['to']}.csv", ['Content-Type' => 'text/csv']);

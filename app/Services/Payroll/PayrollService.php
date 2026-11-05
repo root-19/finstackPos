@@ -101,7 +101,23 @@ class PayrollService
                 $this->recalculateItem($run, $item);
             }
             $run->refreshTotals();
+            $this->ensureNoNegativeNet($run);
         });
+    }
+
+    /**
+     * A payroll under review was checked for negative net pay when it was
+     * submitted; a recalculation must not slip one past that check.
+     *
+     * @throws ValidationException
+     */
+    private function ensureNoNegativeNet(PayrollRun $run): void
+    {
+        if ($run->status === PayrollRun::REVIEW && $run->items()->where('net_cents', '<', 0)->exists()) {
+            throw ValidationException::withMessages([
+                'status' => 'Some payslips now have deductions larger than gross pay. Move the payroll back to draft to fix them.',
+            ]);
+        }
     }
 
     /**
@@ -135,6 +151,7 @@ class PayrollService
             $line->delete();
             $this->recalculateItem($run, $item->fresh(['employee', 'lines']));
             $run->refreshTotals();
+            $this->ensureNoNegativeNet($run);
         });
     }
 
@@ -147,7 +164,7 @@ class PayrollService
             throw ValidationException::withMessages(['status' => "A {$run->status} payroll cannot be moved to {$to}."]);
         }
 
-        if ($to === PayrollRun::REVIEW && $run->items()->where('net_cents', '<', 0)->exists()) {
+        if (in_array($to, [PayrollRun::REVIEW, PayrollRun::APPROVED], true) && $run->items()->where('net_cents', '<', 0)->exists()) {
             throw ValidationException::withMessages(['status' => 'Some payslips have deductions larger than gross pay. Fix them before submitting.']);
         }
 

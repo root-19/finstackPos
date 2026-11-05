@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\Permission;
+use App\Models\SupportMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Middleware;
@@ -46,6 +47,13 @@ class HandleInertiaRequests extends Middleware
                     'trial' => $merchant->onTrial(),
                     'until' => $merchant->subscribed_until?->toIso8601String(),
                 ] : null,
+                // Support chat: replies a store hasn't read, or (for an
+                // administrator) stores' messages nobody has answered.
+                'supportUnread' => fn () => match (true) {
+                    (bool) $request->user()?->isAdmin() => SupportMessage::withoutGlobalScope('merchant')->unreadByAdmin()->count(),
+                    (bool) $request->user()?->merchant_id => SupportMessage::query()->unreadByStore()->count(),
+                    default => 0,
+                },
                 // UI hints only; every route enforces the same gates server-side.
                 'can' => fn () => $request->user()
                     ? collect(Permission::cases())->mapWithKeys(fn (Permission $p) => [$p->value => Gate::allows($p->value)])

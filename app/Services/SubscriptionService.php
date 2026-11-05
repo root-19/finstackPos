@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Merchant;
 use App\Models\SubscriptionPayment;
 use App\Support\Platform;
-use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -26,7 +26,7 @@ class SubscriptionService
     /**
      * @return array{payment: SubscriptionPayment, qr_image: string}
      *
-     * @throws RequestException
+     * @throws HttpClientException
      */
     public function checkout(Merchant $merchant, int $userId, int $months, PayMongo $gateway): array
     {
@@ -55,7 +55,7 @@ class SubscriptionService
         if (! $payment->applied() && $payment->status !== self::SUCCEEDED && $gateway && $payment->provider_id) {
             try {
                 $payment->update(['status' => $gateway->intentStatus($payment->provider_id)]);
-            } catch (RequestException) {
+            } catch (HttpClientException) {
                 // Keep the last known status; the page simply asks again.
             }
         }
@@ -68,15 +68,16 @@ class SubscriptionService
     }
 
     /**
-     * Payments started recently but never confirmed (e.g. the page was closed
-     * right after paying): check them again.
+     * Payments started in the last month but never confirmed (e.g. the page
+     * was closed right after paying): check them again. There is no webhook,
+     * so this is how a payment made days ago still gets applied.
      */
     public function reconcile(Merchant $merchant, ?PayMongo $gateway): void
     {
         SubscriptionPayment::query()
             ->where('merchant_id', $merchant->id)
             ->whereNull('period_end')
-            ->where('created_at', '>=', now()->subDays(2))
+            ->where('created_at', '>=', now()->subDays(30))
             ->get()
             ->each(fn (SubscriptionPayment $p) => $this->refresh($p, $gateway));
     }

@@ -7,7 +7,7 @@ use App\Models\SubscriptionPayment;
 use App\Services\PayMongo;
 use App\Services\SubscriptionService;
 use App\Support\Platform;
-use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -104,7 +104,7 @@ class SubscriptionController extends Controller
 
         try {
             ['payment' => $payment, 'qr_image' => $qr] = $this->subscriptions->checkout($request->user()->merchant, $request->user()->id, $data['months'], $gateway);
-        } catch (RequestException $e) {
+        } catch (HttpClientException $e) {
             Log::warning('Subscription QR Ph failed', ['merchant' => $request->user()->merchant_id, 'status' => $e->response->status()]);
 
             return response()->json(['message' => $e->response->json('errors.0.detail') ?? 'PayMongo could not create the QR code. Try again.'], 502);

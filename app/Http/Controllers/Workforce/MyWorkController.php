@@ -10,6 +10,7 @@ use App\Models\PayrollRun;
 use App\Models\Shift;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -69,32 +70,41 @@ class MyWorkController extends Controller
         $employee = $this->employee($request);
         $tz = $request->user()->merchant->timezone;
 
-        if ($this->openRecord($employee)) {
-            throw ValidationException::withMessages(['clock' => 'You are already clocked in.']);
+        if ($employee->status !== 'active') {
+            throw ValidationException::withMessages(['clock' => 'Your employee record is not active. Ask the store owner.']);
         }
 
-        // The published shift closest to now (within 12 hours), if any.
-        $shift = Shift::query()
-            ->where('employee_id', $employee->id)
-            ->where('status', Shift::PUBLISHED)
-            ->whereBetween('starts_at', [now()->subHours(12), now()->addHours(12)])
-            ->get()
-            ->sortBy(fn (Shift $s) => abs($s->starts_at->diffInMinutes(now())))
-            ->first();
+        return DB::transaction(function () use ($request, $employee, $tz) {
+            // Lock the employee row so two taps cannot open two records.
+            Employee::query()->whereKey($employee->id)->lockForUpdate()->first();
 
-        $record = new AttendanceRecord([
-            'employee_id' => $employee->id,
-            'shift_id' => $shift?->id,
-            'work_date' => now($tz)->toDateString(),
-            'type' => 'worked',
-            'clock_in_at' => now(),
-            'break_minutes' => 0,
-            'status' => AttendanceRecord::PENDING,
-            'source' => 'clock',
-        ]);
-        $record->save();
+            if ($this->openRecord($employee)) {
+                throw ValidationException::withMessages(['clock' => 'You are already clocked in.']);
+            }
 
-        return back()->with('success', 'Clocked in at '.now($tz)->format('g:i A').'.');
+            // The published shift closest to now (within 12 hours), if any.
+            $shift = Shift::query()
+                ->where('employee_id', $employee->id)
+                ->where('status', Shift::PUBLISHED)
+                ->whereBetween('starts_at', [now()->subHours(12), now()->addHours(12)])
+                ->get()
+                ->sortBy(fn (Shift $s) => abs($s->starts_at->diffInMinutes(now())))
+                ->first();
+
+            $record = new AttendanceRecord([
+                'employee_id' => $employee->id,
+                'shift_id' => $shift?->id,
+                'work_date' => now($tz)->toDateString(),
+                'type' => 'worked',
+                'clock_in_at' => now(),
+                'break_minutes' => 0,
+                'status' => AttendanceRecord::PENDING,
+                'source' => 'clock',
+            ]);
+            $record->save();
+
+            return back()->with('success', 'Clocked in at '.now($tz)->format('g:i A').'.');
+        });
     }
 
     public function clockOut(Request $request): RedirectResponse

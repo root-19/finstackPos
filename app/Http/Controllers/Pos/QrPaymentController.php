@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Pos;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentIntent;
 use App\Services\PayMongo;
-use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +28,7 @@ class QrPaymentController extends Controller
 
         try {
             $qr = $gateway->createQrPh($validated['amount_cents'], "{$merchant->name} POS sale");
-        } catch (RequestException $e) {
+        } catch (HttpClientException $e) {
             Log::warning('PayMongo QR Ph failed', ['merchant' => $merchant->id, 'status' => $e->response->status()]);
 
             return response()->json([
@@ -63,7 +63,7 @@ class QrPaymentController extends Controller
         if (! $intent->succeeded() && ($gateway = PayMongo::forMerchant($request->user()->merchant))) {
             try {
                 $intent->update(['status' => $gateway->intentStatus($providerId)]);
-            } catch (RequestException) {
+            } catch (HttpClientException) {
                 // Keep the last known status; the POS simply polls again.
             }
         }

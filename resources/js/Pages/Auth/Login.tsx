@@ -1,3 +1,4 @@
+import { clearOfflinePageCache } from '@/lib/pwa';
 import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -6,9 +7,13 @@ import TextInput from '@/Components/TextInput';
 import { Alert, Field } from '@/Components/ui';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useEffect } from 'react';
 
 export default function Login({ status, canResetPassword }: { status?: string; canResetPassword: boolean }) {
+    // Reaching the login page means the previous session is over (expired,
+    // or logged out some other way): its cached POS page must not outlive it.
+    useEffect(clearOfflinePageCache, []);
+
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',

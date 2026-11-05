@@ -88,6 +88,8 @@ export type PageProps<
         hasEmployeeProfile: boolean;
         /** The store's plan: Pro (active) unlocks Management and unlimited products. */
         subscription: { active: boolean; trial: boolean; until: string | null } | null;
+        /** Support chat messages waiting to be read (replies for a store, questions for an admin). */
+        supportUnread: number;
     };
     flash: {
         success: string | null;

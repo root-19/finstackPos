@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\PricingController;
 use App\Http\Controllers\Admin\StoreController;
 use App\Http\Controllers\Admin\SubscriptionPaymentController;
+use App\Http\Controllers\Admin\SupportController as AdminSupportController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TableMenuController;
 use App\Http\Controllers\TableOrderController;
 use App\Http\Controllers\Workforce\AttendanceController;
@@ -97,6 +99,11 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
 
         Route::resource('suppliers', SupplierController::class)->only(['index', 'store', 'update', 'destroy']);
     });
+
+    // Chat with FinstackPOS support (every plan, anyone in the store).
+    Route::get('/support', [SupportController::class, 'index'])->name('support.index');
+    Route::post('/support', [SupportController::class, 'store'])->middleware('throttle:30,1')->name('support.store');
+    Route::get('/support/attachments/{message}', [SupportController::class, 'attachment'])->name('support.attachment');
 
     // The store's FinstackPOS plan.
     Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
@@ -226,6 +233,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('/stores/{store}/end-now', [StoreController::class, 'endNow'])->name('stores.end-now');
     Route::post('/stores/{store}/active', [StoreController::class, 'toggleActive'])->name('stores.active');
     Route::get('/subscriptions', [SubscriptionPaymentController::class, 'index'])->name('subscriptions');
+    Route::get('/support', [AdminSupportController::class, 'index'])->name('support.index');
+    Route::get('/support/{store}', [AdminSupportController::class, 'show'])->name('support.show');
+    Route::post('/support/{store}', [AdminSupportController::class, 'store'])->middleware('throttle:60,1')->name('support.store');
+    Route::get('/support/{store}/attachments/{message}', [AdminSupportController::class, 'attachment'])->name('support.attachment');
     Route::get('/pricing', [PricingController::class, 'edit'])->name('pricing');
     Route::put('/pricing', [PricingController::class, 'update'])->name('pricing.update');
 });

@@ -1,3 +1,4 @@
+import { clearOfflinePageCache } from '@/lib/pwa';
 import FlashMessage from '@/Components/FlashMessage';
 import { Icon, ICONS, NavIcon } from '@/Components/NavIcons';
 import { PageSkeleton } from '@/Components/Skeleton';
@@ -11,7 +12,7 @@ import { PropsWithChildren, ReactNode, useState } from 'react';
  * from the store app: administrators don't belong to any store.
  */
 export default function AdminLayout({ header, children }: PropsWithChildren<{ header?: ReactNode }>) {
-    const { user } = usePage().props.auth;
+    const { user, supportUnread } = usePage().props.auth;
     const [open, setOpen] = useState(false);
     const navigating = useNavigationLoading();
 
@@ -19,6 +20,7 @@ export default function AdminLayout({ header, children }: PropsWithChildren<{ he
         { label: 'Dashboard', icon: ICONS.dashboard, href: route('admin.dashboard'), active: route().current('admin.dashboard') },
         { label: 'Stores', icon: ICONS.store, href: route('admin.stores.index'), active: route().current('admin.stores.*') },
         { label: 'Subscriptions', icon: ICONS.cash, href: route('admin.subscriptions'), active: route().current('admin.subscriptions') },
+        { label: 'Support', icon: ICONS.chat, href: route('admin.support.index'), active: route().current('admin.support.*'), badge: supportUnread },
         { label: 'Pricing', icon: ICONS.tag, href: route('admin.pricing'), active: route().current('admin.pricing') },
     ];
 
@@ -45,6 +47,11 @@ export default function AdminLayout({ header, children }: PropsWithChildren<{ he
                     >
                         <NavIcon>{item.icon}</NavIcon>
                         {item.label}
+                        {Boolean(item.badge) && (
+                            <span className="ms-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-bold text-white">
+                                {item.badge}
+                            </span>
+                        )}
                     </Link>
                 ))}
             </nav>
@@ -64,6 +71,7 @@ export default function AdminLayout({ header, children }: PropsWithChildren<{ he
                     href={route('logout')}
                     method="post"
                     as="button"
+                    onClick={clearOfflinePageCache}
                     aria-label="Log out"
                     title="Log out"
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 hover:bg-white/10 hover:text-white"

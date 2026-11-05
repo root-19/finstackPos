@@ -5,6 +5,7 @@ import useOnlineStatus from '@/hooks/useOnlineStatus';
 import { newOrders, useTableOrders } from '@/lib/tableOrders';
 import useSidebarCollapsed from '@/hooks/useSidebarCollapsed';
 import { Icon, ICONS, NavIcon } from '@/Components/NavIcons';
+import { PRO_MODULES } from '@/lib/proModules';
 import { clearOfflinePageCache } from '@/lib/pwa';
 import { Dialog, DialogPanel, Popover, PopoverButton, PopoverPanel, Transition, TransitionChild } from '@headlessui/react';
 import { PageProps } from '@/types';
@@ -33,7 +34,7 @@ export default function Authenticated({
     /** Content fills the viewport below the top bar (used by the POS). */
     fullHeight?: boolean;
 }>) {
-    const { user, merchant, can, roleName, hasEmployeeProfile, subscription } = usePage().props.auth;
+    const { user, merchant, can, roleName, hasEmployeeProfile, subscription, supportUnread } = usePage().props.auth;
     const pro = Boolean(subscription?.active);
     const canSell = Boolean(merchant && can?.['pos.sell']);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -122,63 +123,15 @@ export default function Authenticated({
         }
     }
 
-    const managementNav: NavItem[] = [];
-
-    if (merchant) {
-        if (can?.['settings.manage']) {
-            managementNav.push({
-                label: 'Branches',
-                icon: ICONS.store,
-                href: route('branches.index'),
-                active: route().current('branches.*'),
-            });
-        }
-
-        // Staff logins and roles are managed on the Employee List.
-        if (can?.['employees.manage']) {
-            managementNav.push({
-                label: 'Employee List',
-                icon: ICONS.employees,
-                href: route('employees.index'),
-                active: route().current('employees.*'),
-            });
-        }
-
-        if (can?.['schedules.manage']) {
-            managementNav.push({
-                label: 'Employee Scheduling',
-                icon: ICONS.schedule,
-                href: route('shifts.index'),
-                active: route().current('shifts.*'),
-            });
-        }
-
-        if (can?.['attendance.manage']) {
-            managementNav.push({
-                label: 'Attendance & Timesheets',
-                icon: ICONS.attendance,
-                href: route('attendance.index'),
-                active: route().current('attendance.*'),
-            });
-        }
-
-        if (can?.['payroll.manage']) {
-            managementNav.push(
-                {
-                    label: 'Salary & Payroll',
-                    icon: ICONS.payroll,
-                    href: route('payroll.index'),
-                    active: route().current('payroll.*'),
-                },
-                {
-                    label: 'Deduction Settings',
-                    icon: ICONS.deductions,
-                    href: route('deductions.index'),
-                    active: route().current('deductions.*'),
-                },
-            );
-        }
-    }
+    // One list drives this section and the Pro card on the Subscription page.
+    const managementNav: NavItem[] = merchant
+        ? PRO_MODULES.filter((m) => can?.[m.permission]).map((m) => ({
+              label: m.label,
+              icon: ICONS[m.icon],
+              href: route(m.route),
+              active: route().current(m.match),
+          }))
+        : [];
 
     // Free plan: Management shows, locked, and leads to the upgrade page.
     const managementItems: NavItem[] = pro
@@ -212,6 +165,16 @@ export default function Authenticated({
             icon: ICONS.settings,
             href: route('settings.edit'),
             active: route().current('settings.*'),
+        });
+    }
+
+    if (merchant) {
+        accountNav.push({
+            label: 'Support',
+            icon: ICONS.chat,
+            href: route('support.index'),
+            active: route().current('support.*'),
+            badge: supportUnread,
         });
     }
 

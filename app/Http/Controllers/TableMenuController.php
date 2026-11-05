@@ -13,7 +13,7 @@ use App\Models\TableOrder;
 use App\Services\Inventory\InventoryService;
 use App\Services\PayMongo;
 use App\Services\TableOrders\TableOrderPayments;
-use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -245,7 +245,7 @@ class TableMenuController extends Controller
     {
         try {
             $qr = PayMongo::forMerchant($merchant)->createQrPh($total, "{$merchant->name} · {$table->name}");
-        } catch (RequestException $e) {
+        } catch (HttpClientException $e) {
             Log::warning('PayMongo QR Ph failed for a table order', ['merchant' => $merchant->id, 'status' => $e->response->status()]);
 
             throw ValidationException::withMessages(['payment_method' => 'QR payment isn’t available right now. Please choose cash or try again.']);

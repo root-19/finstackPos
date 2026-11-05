@@ -126,3 +126,18 @@ test('underpaid sales are rejected', function () {
         ->assertJsonCount(0, 'synced')
         ->assertJsonCount(1, 'rejected');
 });
+
+test('a sale priced differently from the catalog is rejected', function () {
+    $user = merchantUser();
+    $product = Product::factory()->for($user->merchant)->create(['price_cents' => 10000]);
+
+    $response = $this->actingAs($user)->postJson('/pos/sync/sales', [
+        'sales' => [salePayload($product, ['items' => [
+            ['product_id' => $product->id, 'quantity' => 1, 'unit_price_cents' => 0],
+        ]])],
+    ])->assertOk();
+
+    expect($response->json('synced'))->toBe([]);
+    expect($response->json('rejected.0.message'))->toContain('does not match the catalog');
+    expect(Sale::count())->toBe(0);
+});

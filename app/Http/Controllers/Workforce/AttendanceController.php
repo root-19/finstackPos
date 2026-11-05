@@ -71,6 +71,7 @@ class AttendanceController extends Controller
         $data = $this->validated($request);
         $employee = Employee::findOrFail($data['employee_id']);
         $this->ensureOpen($employee, $data['work_date']);
+        $this->ensureNoRecordOn($employee, $data['work_date']);
 
         $record = new AttendanceRecord($this->values($request, $data));
         $record->source = 'manual';
@@ -89,7 +90,8 @@ class AttendanceController extends Controller
     {
         $data = $this->validated($request);
         $this->ensureOpen($record->employee, $record->work_date->toDateString());
-        $this->ensureOpen(Employee::findOrFail($data['employee_id']), $data['work_date']);
+        $this->ensureOpen($employee = Employee::findOrFail($data['employee_id']), $data['work_date']);
+        $this->ensureNoRecordOn($employee, $data['work_date'], except: $record);
 
         $old = $this->auditValues($record);
         $record->fill($this->values($request, $data));
@@ -115,7 +117,13 @@ class AttendanceController extends Controller
             'reason' => ['nullable', 'required_if:decision,rejected', 'string', 'max:500'],
         ]);
 
-        $records = AttendanceRecord::query()->with('employee')->whereKey($data['ids'])->get();
+        // A clock record still open (not clocked out) has no hours to review yet.
+        $records = AttendanceRecord::query()
+            ->with('employee')
+            ->whereKey($data['ids'])
+            ->where(fn ($q) => $q->where('type', '!=', 'worked')->orWhereNotNull('clock_out_at'))
+            ->get();
+
         foreach ($records as $record) {
             $this->ensureOpen($record->employee, $record->work_date->toDateString());
         }
@@ -243,6 +251,27 @@ class AttendanceController extends Controller
             'break_minutes' => $record->break_minutes,
             'status' => $record->status,
         ];
+    }
+
+    /**
+     * One record per employee per day: a second one would pay the day twice.
+     *
+     * @throws ValidationException
+     */
+    private function ensureNoRecordOn(Employee $employee, string $date, ?AttendanceRecord $except = null): void
+    {
+        $exists = AttendanceRecord::query()
+            ->where('employee_id', $employee->id)
+            ->whereDate('work_date', $date)
+            ->where('status', '!=', AttendanceRecord::REJECTED)
+            ->when($except, fn ($q) => $q->whereKeyNot($except->id))
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'work_date' => "{$employee->name} already has attendance on {$date}. Correct that record instead.",
+            ]);
+        }
     }
 
     /**

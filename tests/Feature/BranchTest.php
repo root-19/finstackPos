@@ -34,6 +34,8 @@ function addBranch(User $owner, string $name): Branch
 function syncSale($test, User $cashier, Product $product, ?int $branchId, int $cents = 10000): string
 {
     $uuid = (string) Str::uuid();
+    // Registers only ever sell at the catalog price.
+    $product->forceFill(['price_cents' => $cents])->save();
     $test->actingAs($cashier)->postJson('/pos/sync/sales', ['sales' => [[
         'client_uuid' => $uuid,
         'branch_id' => $branchId,

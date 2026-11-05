@@ -1,3 +1,4 @@
+import { clearOfflinePageCache } from '@/lib/pwa';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { Alert } from '@/Components/ui';
 import GuestLayout from '@/Layouts/GuestLayout';
@@ -31,7 +32,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     Resend verification email
                 </PrimaryButton>
 
-                <Link href={route('logout')} method="post" as="button" className="btn btn-ghost w-full">
+                <Link href={route('logout')} method="post" as="button" onClick={clearOfflinePageCache} className="btn btn-ghost w-full">
                     Log out
                 </Link>
             </form>

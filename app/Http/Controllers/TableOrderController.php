@@ -10,6 +10,7 @@ use App\Services\TableOrders\TableOrderPayments;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,10 +51,15 @@ class TableOrderController extends Controller
 
         $orders = TableOrder::query()
             ->whereIn('branch_id', $branches->modelKeys())
-            ->where('created_at', '>=', now()->subHours(self::OPEN_HOURS))
+            // Orders still waiting never age out: they count against the
+            // table's limit until the staff accept or reject them.
             ->where(fn ($query) => $query
-                ->whereIn('status', [TableOrder::NEW, TableOrder::PREPARING, TableOrder::READY])
-                ->orWhere(fn ($q) => $q->where('status', TableOrder::SERVED)->whereNull('settled_at')))
+                ->where('status', TableOrder::NEW)
+                ->orWhere(fn ($q) => $q
+                    ->where('created_at', '>=', now()->subHours(self::OPEN_HOURS))
+                    ->where(fn ($open) => $open
+                        ->whereIn('status', [TableOrder::PREPARING, TableOrder::READY])
+                        ->orWhere(fn ($served) => $served->where('status', TableOrder::SERVED)->whereNull('settled_at')))))
             ->with('items')
             ->oldest()
             ->get();
@@ -94,37 +100,49 @@ class TableOrderController extends Controller
             'status' => ['required', Rule::in(array_keys(TableOrder::STATUS_TIMES))],
         ]);
 
-        if ($data['status'] === TableOrder::REJECTED && $order->paid()) {
-            return response()->json(['message' => 'This order is already paid. Accept it, or refund the customer first.'], 409);
+        // Ask PayMongo first (outside the lock: it is a network call), so a
+        // QR Ph payment that just landed is never rejected or kept waiting.
+        if ($order->status === TableOrder::NEW && $order->payment_method === PaymentMethod::QrPh->value) {
+            $payments->refresh($order);
         }
 
-        if (! $order->canMoveTo($data['status'])) {
-            return response()->json(['message' => 'This order was already updated. The list has been refreshed.'], 409);
-        }
+        // Two staff phones acting on the same order at once: the row is
+        // locked and every check repeated on what is actually stored.
+        [$code, $body] = DB::transaction(function () use ($data, $order, $payments, $request) {
+            $order = TableOrder::withoutGlobalScopes()->lockForUpdate()->findOrFail($order->id);
 
-        $receipt = null;
-        if ($order->status === TableOrder::NEW && $data['status'] !== TableOrder::REJECTED) {
-            if ($order->payment_method === PaymentMethod::QrPh->value) {
-                $payments->refresh($order);
-                $order->refresh();
-                if (! $order->paid()) {
-                    return response()->json(['message' => 'Waiting for the customer’s QR Ph payment. Accept it once it’s paid.'], 409);
-                }
-            } elseif (is_string($sale = $payments->settle($order, $request->user()))) {
-                return response()->json(['message' => $sale], 422);
+            if ($data['status'] === TableOrder::REJECTED && $order->paid()) {
+                return [409, ['message' => 'This order is already paid. Accept it, or refund the customer first.']];
             }
 
-            $order->refresh();
-            $receipt = $payments->receipt(Sale::withoutGlobalScopes()->findOrFail($order->sale_id));
-        }
+            if (! $order->canMoveTo($data['status'])) {
+                return [409, ['message' => 'This order was already updated. The list has been refreshed.']];
+            }
 
-        $order->status = $data['status'];
-        $order->{TableOrder::STATUS_TIMES[$data['status']]} = now();
-        // Accepting from "new" straight to ready still counts as accepted.
-        $order->accepted_at ??= $data['status'] === TableOrder::REJECTED ? null : now();
-        $order->save();
+            $receipt = null;
+            if ($order->status === TableOrder::NEW && $data['status'] !== TableOrder::REJECTED) {
+                if ($order->payment_method === PaymentMethod::QrPh->value) {
+                    if (! $order->paid()) {
+                        return [409, ['message' => 'Waiting for the customer’s QR Ph payment. Accept it once it’s paid.']];
+                    }
+                } elseif (is_string($sale = $payments->settle($order, $request->user()))) {
+                    return [422, ['message' => $sale]];
+                }
 
-        return response()->json(['ok' => true, 'receipt' => $receipt]);
+                $order->refresh();
+                $receipt = $payments->receipt(Sale::withoutGlobalScopes()->findOrFail($order->sale_id));
+            }
+
+            $order->status = $data['status'];
+            $order->{TableOrder::STATUS_TIMES[$data['status']]} = now();
+            // Accepting from "new" straight to ready still counts as accepted.
+            $order->accepted_at ??= $data['status'] === TableOrder::REJECTED ? null : now();
+            $order->save();
+
+            return [200, ['ok' => true, 'receipt' => $receipt]];
+        });
+
+        return response()->json($body, $code);
     }
 
     /** Stop or resume taking orders from the tables of the branches followed. */

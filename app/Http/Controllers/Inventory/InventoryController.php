@@ -10,6 +10,7 @@ use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Services\Inventory\InventoryService;
 use Illuminate\Http\RedirectResponse;
+use App\Support\Csv;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -208,11 +209,11 @@ class InventoryController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Branch', 'Item', 'SKU', 'Category', 'Unit', 'On hand', 'Reorder level', 'Unit cost', 'Stock value', 'Supplier', 'Location', 'Status']);
             foreach ($items as $i) {
-                fputcsv($out, [
+                fputcsv($out, Csv::row([
                     $label, $i->name, $i->sku, $i->category, $i->unit, $i->quantity, $i->reorder_level,
                     number_format($i->unit_cost_cents / 100, 4, '.', ''), number_format($i->valueCents() / 100, 2, '.', ''),
                     $i->supplier?->name, $i->location, $i->is_active ? $i->stockStatus() : 'inactive',
-                ]);
+                ]));
             }
             fclose($out);
         }, 'inventory-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);

@@ -4,6 +4,7 @@ import PageHeader from '@/Components/PageHeader';
 import { Alert, Badge, Card, CardHeader, DialogLayout, EmptyState } from '@/Components/ui';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatMoney } from '@/lib/money';
+import { PRO_FEATURES } from '@/lib/proModules';
 import { PageProps } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import axios, { isAxiosError } from 'axios';
@@ -52,17 +53,6 @@ const FREE_FEATURES = [
     'Inventory and recipes',
     'Sales and inventory reports',
     'Table QR codes with your menu',
-];
-const PRO_FEATURES = [
-    'Everything in Free',
-    'Unlimited products',
-    'Scan-to-order: customers order from their table',
-    'Employee List with staff logins and roles',
-    'Employee Scheduling and auto-schedule',
-    'Attendance & Timesheets',
-    'Salary & Payroll with payslips',
-    'Deduction Settings',
-    'Payroll and schedule reports',
 ];
 
 export default function Subscription({ plan, trial, pricing, usage, canPay, paymentsReady, payments }: PageProps<Props>) {
