@@ -13,6 +13,7 @@ enum Permission: string
     case ProductsManage = 'products.manage';
     case CategoriesManage = 'categories.manage';
     case SalesView = 'sales.view';
+    case SalesVoid = 'sales.void';
     case InventoryManage = 'inventory.manage';
     case SchedulesManage = 'schedules.manage';
     case AttendanceManage = 'attendance.manage';
@@ -32,7 +33,7 @@ enum Permission: string
     public static function assignable(): array
     {
         return [
-            self::PosSell, self::ProductsManage, self::CategoriesManage, self::SalesView, self::InventoryManage,
+            self::PosSell, self::ProductsManage, self::CategoriesManage, self::SalesView, self::SalesVoid, self::InventoryManage,
             self::SchedulesManage, self::AttendanceManage,
         ];
     }
@@ -45,6 +46,7 @@ enum Permission: string
             self::ProductsManage => 'Products',
             self::CategoriesManage => 'Categories',
             self::SalesView => 'Sales',
+            self::SalesVoid => 'Void & refund sales',
             self::InventoryManage => 'Inventory',
             self::SchedulesManage => 'Employee Scheduling',
             self::AttendanceManage => 'Attendance & Timesheets',
@@ -62,6 +64,7 @@ enum Permission: string
             self::ProductsManage => 'Add and edit products, sizes, prices, and stock.',
             self::CategoriesManage => 'Add, rename, and delete categories.',
             self::SalesView => 'See all sales and reprint receipts.',
+            self::SalesVoid => 'Void sales and give refunds, and approve them for cashiers with a manager PIN.',
             self::InventoryManage => 'Track supplies and ingredients, receive stock, record counts and waste, and set recipes.',
             self::SchedulesManage => 'Create, publish, and cancel shifts for the team.',
             self::AttendanceManage => 'Record, correct, and approve attendance and timesheets.',

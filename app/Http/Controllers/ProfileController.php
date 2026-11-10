@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\AuditLog;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,8 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            // Managers set their own PIN to approve voids and refunds at the register.
+            'managerPin' => $request->user()->canApproveVoids() ? ['set' => $request->user()->manager_pin !== null] : null,
         ]);
     }
 
@@ -39,6 +42,32 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit');
+    }
+
+    /**
+     * Set or change the user's own manager PIN, used to approve voids and
+     * refunds at the register. Only managers (who may void) have one; their
+     * password confirms it's really them.
+     */
+    public function updateManagerPin(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->canApproveVoids(), 403);
+
+        $data = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'pin' => ['required', 'string', 'regex:/^\d{4,6}$/', 'confirmed'],
+        ], [
+            'pin.regex' => 'Use 4 to 6 digits.',
+        ]);
+
+        $user = $request->user();
+        $hadPin = $user->manager_pin !== null;
+        $user->manager_pin = $data['pin'];
+        $user->save();
+
+        AuditLog::record($user, $hadPin ? 'manager_pin.changed' : 'manager_pin.set');
+
+        return Redirect::route('profile.edit')->with('status', 'manager-pin-updated');
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Services\Inventory;
 
 use App\Models\Branch;
+use App\Models\BranchProduct;
 use App\Models\InventoryItem;
 use App\Models\InventoryStock;
 use App\Models\Merchant;
@@ -42,7 +43,7 @@ class InventoryService
             $before = $stock->quantity;
 
             $change = match ($type) {
-                StockMovement::PURCHASE => $quantity,
+                StockMovement::PURCHASE, StockMovement::CUSTOMER_RETURN => $quantity,
                 StockMovement::ADJUSTMENT => $quantity - $before,
                 StockMovement::SALE, StockMovement::WASTE, StockMovement::USAGE, StockMovement::RETURN => -$quantity,
             };
@@ -100,11 +101,71 @@ class InventoryService
      */
     public function consumeForSale(Sale $sale, Collection $lines, ?int $userId): void
     {
+        foreach ($this->recipeUsage($lines) as $itemId => $quantity) {
+            $item = InventoryItem::withTrashed()->find($itemId);
+            if ($item) {
+                $this->move($item, StockMovement::SALE, round($quantity, 3), [
+                    'branch_id' => $sale->branch_id,
+                    'sale_id' => $sale->id,
+                    'reference' => strtoupper(substr($sale->client_uuid, 0, 8)),
+                    'user_id' => $userId,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Put back what a voided or refunded sale used: the products' own stock
+     * (overall, then the sale's branch, mirroring SaleRecorder) and the
+     * ingredients of their recipes, as "customer_return" movements at the
+     * sale's branch. Called inside the void or refund's transaction.
+     *
+     * @param  Collection<int, array{product_id: int|null, quantity: int, options: array<int, array{group: string, value: string}>|null}>  $lines
+     */
+    public function returnForSale(Sale $sale, Collection $lines, ?int $userId, string $note): void
+    {
+        foreach ($lines->filter(fn ($l) => $l['product_id'] !== null && $l['quantity'] > 0) as $line) {
+            $tracked = Product::withoutGlobalScopes()
+                ->whereKey($line['product_id'])
+                ->whereNotNull('stock')
+                ->increment('stock', $line['quantity']);
+
+            if ($tracked && BranchProduct::query()->where('product_id', $line['product_id'])->whereNotNull('stock')->exists()) {
+                BranchProduct::query()
+                    ->firstOrCreate(['product_id' => $line['product_id'], 'branch_id' => $sale->branch_id], ['stock' => 0])
+                    ->increment('stock', $line['quantity']);
+            }
+        }
+
+        foreach ($this->recipeUsage($lines->filter(fn ($l) => $l['product_id'] !== null)) as $itemId => $quantity) {
+            $item = InventoryItem::withTrashed()->find($itemId);
+            if ($item) {
+                $this->move($item, StockMovement::CUSTOMER_RETURN, round($quantity, 3), [
+                    'branch_id' => $sale->branch_id,
+                    'sale_id' => $sale->id,
+                    'reference' => strtoupper(substr($sale->client_uuid, 0, 8)),
+                    'note' => $note,
+                    'user_id' => $userId,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * How much of each inventory item some sale lines use, by recipe. Sizes
+     * are matched by name, as the sale records them. Keys are sorted: a fixed
+     * lock order avoids deadlocks between tills.
+     *
+     * @param  Collection<int, array{product_id: int, quantity: int, options: array<int, array{group: string, value: string}>|null}>  $lines
+     * @return array<int, float>
+     */
+    private function recipeUsage(Collection $lines): array
+    {
         $productIds = $lines->pluck('product_id')->unique();
         $recipes = RecipeLine::query()->whereIn('product_id', $productIds)->get()->groupBy('product_id');
 
         if ($recipes->isEmpty()) {
-            return;
+            return [];
         }
 
         $sizes = OptionValue::query()
@@ -123,18 +184,9 @@ class InventoryService
             }
         }
 
-        ksort($usage); // a fixed lock order avoids deadlocks between tills
-        foreach ($usage as $itemId => $quantity) {
-            $item = InventoryItem::withTrashed()->find($itemId);
-            if ($item) {
-                $this->move($item, StockMovement::SALE, round($quantity, 3), [
-                    'branch_id' => $sale->branch_id,
-                    'sale_id' => $sale->id,
-                    'reference' => strtoupper(substr($sale->client_uuid, 0, 8)),
-                    'user_id' => $userId,
-                ]);
-            }
-        }
+        ksort($usage);
+
+        return $usage;
     }
 
     /**

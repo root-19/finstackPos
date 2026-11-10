@@ -49,6 +49,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'manager_pin',
     ];
 
     /**
@@ -62,6 +63,7 @@ class User extends Authenticatable
             'is_admin' => 'boolean',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'manager_pin' => 'hashed',
             'role' => UserRole::class,
         ];
     }
@@ -101,6 +103,12 @@ class User extends Authenticatable
     public function hasPermission(Permission $permission): bool
     {
         return $this->isOwner() || (bool) $this->staffRole?->grants($permission);
+    }
+
+    /** May void and refund sales, and approve them for others with a PIN. */
+    public function canApproveVoids(): bool
+    {
+        return $this->hasPermission(Permission::SalesVoid);
     }
 
     /** A FinstackPOS administrator (manages all stores; belongs to none). */

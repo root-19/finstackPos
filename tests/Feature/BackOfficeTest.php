@@ -322,15 +322,17 @@ test('point of sale access includes giving senior and pwd discounts', function (
     ]]])->assertJsonPath('synced', [$uuid]);
 });
 
-test('the permission list is the sidebar pages', function () {
+test('the permission list is the sidebar pages, plus voids and refunds', function () {
     $this->actingAs(storeUser())->get('/team/employees')
         ->assertInertia(fn ($page) => $page
             ->where('permissions.0.label', 'Point of Sale')
             ->where('permissions.1.label', 'Products')
             ->where('permissions.2.label', 'Categories')
             ->where('permissions.3.label', 'Sales')
-            ->where('permissions.4.label', 'Inventory')
-            ->where('permissions.5.label', 'Employee Scheduling')
-            ->where('permissions.6.label', 'Attendance & Timesheets')
-            ->has('permissions', 7));
+            // Not a page: what a Sales role may also do (and approve at the register).
+            ->where('permissions.4.label', 'Void & refund sales')
+            ->where('permissions.5.label', 'Inventory')
+            ->where('permissions.6.label', 'Employee Scheduling')
+            ->where('permissions.7.label', 'Attendance & Timesheets')
+            ->has('permissions', 8));
 });

@@ -30,12 +30,20 @@ class SaleItem extends Model
     {
         return [
             'options' => 'array',
+            'quantity' => 'integer',
+            'refunded_quantity' => 'integer',
         ];
     }
 
     public function sale(): BelongsTo
     {
         return $this->belongsTo(Sale::class);
+    }
+
+    /** Units not given back yet. */
+    public function refundableQuantity(): int
+    {
+        return max(0, $this->quantity - $this->refunded_quantity);
     }
 
     public function product(): BelongsTo
