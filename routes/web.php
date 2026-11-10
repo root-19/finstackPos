@@ -28,6 +28,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TableMenuController;
 use App\Http\Controllers\TableOrderController;
+use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\Workforce\AttendanceController;
 use App\Http\Controllers\Workforce\DeductionRuleController;
 use App\Http\Controllers\Workforce\EmployeeController;
@@ -38,12 +39,19 @@ use App\Http\Controllers\Workforce\ShiftController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
-});
+Route::get('/', WelcomeController::class)->name('welcome');
+
+// Legal drafts, in the landing page's receipt style.
+Route::get('/privacy', fn () => Inertia::render('Legal/Privacy')->withViewData(WelcomeController::meta(
+    'Privacy Policy (draft) - FinstackPOS',
+    'How FinstackPOS handles store, sales and employee data under the Data Privacy Act of 2012 (RA 10173). Draft for legal review.',
+    '/privacy',
+)))->name('privacy');
+Route::get('/terms', fn () => Inertia::render('Legal/Terms')->withViewData(WelcomeController::meta(
+    'Terms of Service (draft) - FinstackPOS',
+    'The terms for using FinstackPOS, the Free plan and prepaid Pro months. Draft for legal review.',
+    '/terms',
+)))->name('terms');
 
 // The menu a table's QR code opens on the customer's phone (no login).
 Route::prefix('order/{token}')->name('menu.')->group(function () {

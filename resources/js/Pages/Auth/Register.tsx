@@ -103,6 +103,19 @@ export default function Register() {
                 <PrimaryButton className="w-full" disabled={processing}>
                     Create account
                 </PrimaryButton>
+
+                {/* Plain links (full page load): the legal pages use the landing page's own fonts and colors. */}
+                <p className="text-center text-xs text-gray-500">
+                    By creating an account you agree to the{' '}
+                    <a href={route('terms')} className="rounded font-semibold text-gray-700 underline hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40">
+                        Terms
+                    </a>{' '}
+                    and{' '}
+                    <a href={route('privacy')} className="rounded font-semibold text-gray-700 underline hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40">
+                        Privacy Policy
+                    </a>
+                    .
+                </p>
             </form>
         </GuestLayout>
     );
