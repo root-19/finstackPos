@@ -245,7 +245,8 @@ export default function BookDemo({ options }: { options: DemoOptions }) {
                                 </button>
                                 {form.hasErrors && (
                                     <p role="alert" className="mt-3 text-sm font-semibold text-brand-800">
-                                        Please check the marked fields.
+                                        {/* A form-wide message (e.g. the daily limit), or a nudge to the marked fields. */}
+                                        {(form.errors as Record<string, string | undefined>).form ?? 'Please check the marked fields.'}
                                     </p>
                                 )}
                                 <p className="mt-3 text-sm text-shop-ink/70">

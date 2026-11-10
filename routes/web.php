@@ -41,8 +41,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', WelcomeController::class)->name('welcome');
-// "Book a demo" from the landing page (public; a few tries per minute per visitor).
-Route::post('/book-demo', [DemoRequestController::class, 'store'])->middleware('throttle:5,1')->name('demo.store');
+// "Book a demo" from the landing page (public; limits in AppServiceProvider and DemoRequestController).
+Route::post('/book-demo', [DemoRequestController::class, 'store'])->middleware('throttle:demo-requests')->name('demo.store');
 
 // Legal drafts, in the landing page's receipt style.
 Route::get('/privacy', fn () => Inertia::render('Legal/Privacy')->withViewData(WelcomeController::meta(

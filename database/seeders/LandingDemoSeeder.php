@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * A demo café used for the landing page screenshots. Run it by hand only:
@@ -84,6 +85,11 @@ class LandingDemoSeeder extends Seeder
 
     public function run(): void
     {
+        // Never on a live server by accident: it creates a store with free Pro and prints its login.
+        if (app()->isProduction() && ! filter_var(env('LANDING_DEMO_ALLOW_PRODUCTION'), FILTER_VALIDATE_BOOL)) {
+            throw new RuntimeException('LandingDemoSeeder refuses to run in production. Set LANDING_DEMO_ALLOW_PRODUCTION=true if you really mean it.');
+        }
+
         $password = env('LANDING_DEMO_PASSWORD') ?: Str::password(16, symbols: false);
 
         [$merchant, $owner] = DB::transaction(fn () => $this->store($password));

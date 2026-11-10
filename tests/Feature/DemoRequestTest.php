@@ -3,6 +3,7 @@
 use App\Http\Controllers\DemoRequestController;
 use App\Mail\DemoRequested;
 use App\Models\DemoRequest;
+use Database\Seeders\LandingDemoSeeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -105,6 +106,64 @@ it('limits how often one visitor can book', function () {
     }
 
     $this->from('/')->post('/book-demo', demoForm())->assertStatus(429);
+});
+
+it('caps a visitor at 20 requests a day even when they pace them', function () {
+    foreach (range(1, 20) as $i) {
+        if ($i % 5 === 1 && $i > 1) {
+            $this->travel(61)->seconds(); // past the per-minute limit, still the same day
+        }
+        $this->from('/')->post('/book-demo', demoForm(['email' => "pace{$i}@example.test"]))->assertRedirect('/');
+    }
+
+    $this->travel(61)->seconds();
+    $this->from('/')->post('/book-demo', demoForm(['email' => 'pace21@example.test']))->assertStatus(429);
+});
+
+it('treats the same email and slot as one booking and emails once', function () {
+    $this->from('/')->post('/book-demo', demoForm())->assertSessionHas('success');
+    // A retry with different casing, same slot.
+    $this->from('/')->post('/book-demo', demoForm(['email' => 'ANA@example.test']))->assertSessionHas('success');
+
+    expect(DemoRequest::count())->toBe(1)
+        ->and(DemoRequest::sole()->email)->toBe('ana@example.test');
+    Mail::assertSentCount(1);
+});
+
+it('limits one email address to a few requests a day', function () {
+    foreach (['09:00', '10:00', '11:00'] as $time) {
+        $this->from('/')->post('/book-demo', demoForm(['time' => $time]))->assertSessionHas('success');
+    }
+
+    $this->from('/')->post('/book-demo', demoForm(['time' => '12:00']))->assertSessionHasErrors('email');
+
+    expect(DemoRequest::count())->toBe(DemoRequestController::PER_EMAIL_PER_DAY);
+    Mail::assertSentCount(DemoRequestController::PER_EMAIL_PER_DAY);
+});
+
+it('stops taking requests site-wide once the daily limit is reached', function () {
+    config(['services.demo_requests.daily_limit' => 2]);
+
+    $this->from('/')->post('/book-demo', demoForm(['email' => 'one@example.test']))->assertSessionHas('success');
+    $this->from('/')->post('/book-demo', demoForm(['email' => 'two@example.test']))->assertSessionHas('success');
+    $this->from('/')->post('/book-demo', demoForm(['email' => 'three@example.test']))->assertSessionHasErrors('form');
+
+    expect(DemoRequest::count())->toBe(2);
+    Mail::assertSentCount(2);
+
+    // Once the 24-hour window has passed it opens again.
+    $this->travel(25)->hours();
+    $this->from('/')->post('/book-demo', demoForm(['email' => 'three@example.test', 'date' => '2026-11-13']))->assertSessionHas('success');
+});
+
+it('refuses to seed the demo store in production', function () {
+    app()->instance('env', 'production');
+    app()['env'] = 'production';
+
+    expect(fn () => (new LandingDemoSeeder)->run())->toThrow(RuntimeException::class, 'refuses to run in production');
+
+    expect(DemoRequest::count())->toBe(0)
+        ->and(App\Models\Merchant::query()->where('slug', 'landing-demo-kapihan-sa-kanto')->exists())->toBeFalse();
 });
 
 it('renders the notification email without letting the visitor inject markup', function () {

@@ -18,9 +18,11 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
-    // Where the landing page's "Book a demo" requests are emailed (empty = saved only).
+    // Where the landing page's "Book a demo" requests are emailed (empty = saved only), and how many
+    // the whole site accepts per 24 hours (protects the mail account's sending quota).
     'demo_requests' => [
         'notify' => env('DEMO_REQUEST_NOTIFY_EMAIL'),
+        'daily_limit' => (int) env('DEMO_REQUEST_DAILY_LIMIT', 50),
     ],
 
     'resend' => [

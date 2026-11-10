@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -19,6 +20,9 @@ class DemoRequestController extends Controller
 {
     public const BOOKED = 'Thanks! Your demo request is in. We will confirm the schedule by email.';
 
+    /** Demo requests one email address can make in 24 hours. */
+    public const PER_EMAIL_PER_DAY = 3;
+
     public function store(StoreDemoRequest $request): RedirectResponse
     {
         $data = $request->validated();
@@ -28,13 +32,33 @@ class DemoRequestController extends Controller
             return back()->with('success', self::BOOKED);
         }
 
+        $email = Str::lower($data['email']);
+        $preferredAt = Carbon::createFromFormat('Y-m-d H:i', "{$data['date']} {$data['time']}", DemoRequest::TIMEZONE)->utc();
+
+        // The same person asking for the same slot again (a double tap, a retry): already booked, don't email twice.
+        if (DemoRequest::query()->where('email', $email)->where('preferred_at', $preferredAt)->exists()) {
+            return back()->with('success', self::BOOKED);
+        }
+
+        // Limits on top of the per-IP throttle (see AppServiceProvider), so a flood from many IPs can't
+        // use up the mail account's daily quota (the same account sends password resets).
+        if (DemoRequest::query()->where('email', $email)->where('created_at', '>=', now()->subDay())->count() >= self::PER_EMAIL_PER_DAY) {
+            return back()->withErrors(['email' => 'You already asked for a few demos today. We will reply by email.']);
+        }
+
+        if (DemoRequest::query()->where('created_at', '>=', now()->subDay())->count() >= (int) config('services.demo_requests.daily_limit')) {
+            Log::warning('Demo requests hit the daily limit; new ones are refused until it resets');
+
+            return back()->withErrors(['form' => 'We have received many demo requests today. Please try again tomorrow.']);
+        }
+
         $demo = DemoRequest::create([
             'name' => $data['name'],
             'business_name' => $data['business_name'],
-            'email' => $data['email'],
+            'email' => $email,
             'phone' => $data['phone'] ?? null,
             'notes' => $data['notes'] ?? null,
-            'preferred_at' => Carbon::createFromFormat('Y-m-d H:i', "{$data['date']} {$data['time']}", DemoRequest::TIMEZONE)->utc(),
+            'preferred_at' => $preferredAt,
         ]);
 
         $notify = config('services.demo_requests.notify');
