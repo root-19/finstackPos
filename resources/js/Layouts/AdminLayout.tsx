@@ -41,8 +41,8 @@ export default function AdminLayout({ header, children }: PropsWithChildren<{ he
                         key={item.label}
                         href={item.href}
                         aria-current={item.active ? 'page' : undefined}
-                        className={`flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-base font-medium transition-colors ${
-                            item.active ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
+                        className={`flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-base transition-colors ${
+                            item.active ? 'bg-white/10 font-bold text-white' : 'font-semibold text-white/80 hover:bg-white/5 hover:text-white'
                         }`}
                     >
                         <NavIcon>{item.icon}</NavIcon>

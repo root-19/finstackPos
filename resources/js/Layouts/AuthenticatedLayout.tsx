@@ -436,7 +436,7 @@ function NavSection({ title, items, compact }: { title: string; items: NavItem[]
             {compact ? (
                 <div className="mx-auto mb-2 h-px w-6 bg-gray-200" aria-hidden />
             ) : (
-                <p className="px-2.5 text-xs font-semibold uppercase tracking-wider text-gray-400">{title}</p>
+                <p className="px-2.5 text-xs font-bold uppercase tracking-wider text-gray-500">{title}</p>
             )}
             <ul className={`space-y-0.5 ${compact ? 'flex flex-col items-center' : 'mt-1.5'}`}>
                 {items.map((item) => (
@@ -450,20 +450,21 @@ function NavSection({ title, items, compact }: { title: string; items: NavItem[]
 }
 
 function NavEntry({ item, compact }: { item: NavItem; compact: boolean }) {
-    const className = `group relative flex items-center rounded-lg text-base font-medium transition-colors ${
+    // Bold, dark labels so the sidebar reads at a glance (active item boldest).
+    const className = `group relative flex items-center rounded-lg text-base transition-colors ${
         compact ? 'h-10 w-10 justify-center' : 'w-full gap-3 px-2.5 py-2.5'
-    } ${item.active ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-950'}`;
+    } ${item.active ? 'bg-brand-50 font-bold text-brand-700' : 'font-semibold text-gray-800 hover:bg-gray-100 hover:text-gray-950'}`;
 
     const content = (
         <>
             {item.active && !compact && <span className="absolute -left-3 top-2 h-6 w-1 rounded-r bg-brand-600" aria-hidden />}
-            <span className={item.active ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'}>
+            <span className={item.active ? 'text-brand-600' : 'text-gray-500 group-hover:text-gray-800'}>
                 <NavIcon>{item.locked ? ICONS.lock : item.icon}</NavIcon>
             </span>
             {compact ? (
                 <HoverLabel>{item.locked ? `${item.label} (Pro)` : item.label}</HoverLabel>
             ) : (
-                <span className={`truncate ${item.locked ? 'text-gray-400' : ''}`}>{item.label}</span>
+                <span className={`truncate ${item.locked ? 'text-gray-500' : ''}`}>{item.label}</span>
             )}
             {Boolean(item.badge) && (
                 <span
