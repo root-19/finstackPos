@@ -6,4 +6,4 @@ Cross-cutting principles:
 - Third-party requests from app pages (fonts, scripts) count as personal-data disclosure under RA 10173: prefer self-hosting.
 
 Active features:
-- [landing-ui](landing-ui.md): landing, Book a demo, auth shell, app theme. Review 2026-11-10: 2 HIGH (secrets), 3 MEDIUM, 3 LOW open.
+- [landing-ui](landing-ui.md): landing, Book a demo, auth shell, app theme. Review 2026-11-10: open = 2 HIGH (secret rotation, owner), 1 MEDIUM (S5 .env cleanup, owner), 2 LOW. S3/S4/S6 fixed.

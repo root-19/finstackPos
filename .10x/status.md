@@ -11,6 +11,7 @@ Feature: `landing-ui` · Branch: `feature/landing-ui` (from main @ e2910ac + Rol
 | 4c Redesign v3 | Done: "shop floor" format after jasprintcraft.vercel.app (ADR-003) |
 | 4d App theme | Done: shop-floor theme for the whole app + dark/light toggle (ADR-004, branch feature/app-shop-theme) |
 | 5b Security review | Done 2026-11-10: 2 HIGH (secret rotation: PayMongo live key, CvSU Gmail app password), 3 MEDIUM, 3 LOW. See reviews/2026-11-10-security-review.md |
+| 5c Security fixes | Done: S3 demo limits, S4 self-hosted fonts, S6 seeder guard (236 tests) |
 | 6 Delivery | Not pushed; **blocked on S1/S2 rotation before any deploy** |
 
 Abandoned: `feature/landing-receipt` (receipt concept, rejected by the user).
