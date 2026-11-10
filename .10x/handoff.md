@@ -1,5 +1,14 @@
 # Handoff
 
+## Current: Security → SDE / owner (2026-11-10)
+Read `.10x/decisions/security/landing-ui.md` and `.10x/reviews/2026-11-10-security-review.md`.
+- Owner (can't be done in code): rotate the PayMongo live secret (S1); revoke the CvSU Gmail app password and set up a
+  dedicated mailer (S2); delete the commented production DB lines from `.env` (S5).
+- SDE: S3 demo-request daily cap + duplicate check (+ tests); S4 self-host Anton/Archivo/IBM Plex Mono; S6 production
+  guard on LandingDemoSeeder; S7 retention/prune for demo_requests.
+
+## History
+
 To: QA (after screenshots land).
 Read: `.10x/specs/2026-11-10-landing-ui-design.md`, `.10x/adrs/002-landing-ui-marketing-shell.md`.
 
