@@ -1,6 +1,6 @@
 import { CSSProperties, PointerEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import LineIcon, { IconName } from './LineIcon';
-import { QrPattern } from './Showcase';
+import QrPattern from './QrPattern';
 
 /*
  * A sale playing out on the register, in 3D: products are rung up on the

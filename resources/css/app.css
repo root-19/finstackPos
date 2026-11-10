@@ -238,9 +238,97 @@
     }
 }
 
+/*
+ * Landing + legal pages (marketing). Tokens: Plus Jakarta Sans, 1200px
+ * content width, sections py-20 / lg:py-28, rounded-2xl cards, rounded-xl
+ * buttons, rounded-full chips, soft shadows, brand red as the accent only.
+ */
+@layer components {
+    .mk-container {
+        @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8;
+    }
+
+    .mk-section {
+        @apply py-20 lg:py-28;
+    }
+
+    .mk-h1 {
+        @apply font-extrabold text-ink-900;
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        line-height: 1.04;
+        letter-spacing: -0.03em;
+        text-wrap: balance;
+    }
+
+    .mk-h2 {
+        @apply font-extrabold text-ink-900;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        text-wrap: balance;
+    }
+
+    .mk-lead {
+        @apply text-[17px] text-gray-600 sm:text-lg;
+        line-height: 1.6;
+    }
+
+    .mk-eyebrow {
+        @apply text-sm font-bold uppercase tracking-[0.12em] text-brand-700;
+    }
+
+    .mk-btn {
+        @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-6 text-base font-semibold transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2;
+    }
+
+    .mk-btn-primary {
+        @apply mk-btn bg-brand-700 text-white shadow-soft hover:-translate-y-0.5 hover:bg-brand-800;
+    }
+
+    .mk-btn-secondary {
+        @apply mk-btn border border-gray-300 bg-white text-ink-900 hover:-translate-y-0.5 hover:border-gray-400 hover:bg-gray-50;
+    }
+
+    .mk-card {
+        @apply rounded-2xl bg-white shadow-soft ring-1 ring-gray-200/70;
+    }
+
+    /* A 24px line icon in a soft tinted square. */
+    .mk-icon {
+        @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600;
+    }
+
+    .mk-chip {
+        @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700;
+    }
+
+    .mk-link {
+        @apply rounded-md font-medium text-gray-600 transition-colors duration-150 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2;
+    }
+}
+
+/* Landing mobile menu: slides down under the nav bar. */
+@keyframes menu-down {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
+    }
+
+    .mk-btn,
+    .mk-btn-primary,
+    .mk-btn-secondary {
+        transition: none;
+        transform: none !important;
     }
 
     .js-reveal {
