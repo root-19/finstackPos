@@ -7,6 +7,7 @@ export type Permission =
     | 'products.manage'
     | 'categories.manage'
     | 'sales.view'
+    | 'sales.void'
     | 'inventory.manage'
     | 'staff.manage'
     | 'settings.manage'

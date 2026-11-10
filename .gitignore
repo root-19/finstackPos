@@ -26,3 +26,6 @@ Thumbs.db
 /public/sw.js.map
 /public/workbox-*.js
 /public/workbox-*.js.map
+
+# Claude Code agent worktrees (separate checkouts, never part of the repo)
+/.claude/worktrees/

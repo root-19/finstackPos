@@ -20,6 +20,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SaleAdjustmentController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
@@ -60,6 +61,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::put('/profile/manager-pin', [ProfileController::class, 'updateManagerPin'])->middleware('throttle:10,1')->name('profile.manager-pin');
 });
 
 // Store back office. Each area needs a permission from the user's role
@@ -75,6 +77,14 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
     Route::middleware('can:sales.view')->group(function () {
         Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
         Route::get('/sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
+    });
+
+    // Voids and refunds, from Sales or the register (online only). Who may
+    // do them, or needs a manager's PIN, is checked per request.
+    Route::prefix('sales/{sale}')->name('sales.')->group(function () {
+        Route::get('/adjust', [SaleAdjustmentController::class, 'show'])->name('adjust');
+        Route::post('/void', [SaleAdjustmentController::class, 'void'])->middleware('throttle:20,1')->name('void');
+        Route::post('/refunds', [SaleAdjustmentController::class, 'refund'])->middleware('throttle:20,1')->name('refund');
     });
 
     // Reports: each report checks the permission of the page its data comes from.
@@ -213,6 +223,10 @@ Route::middleware(['auth', 'verified', 'merchant', 'can:pos.sell'])->prefix('pos
     Route::post('/sync/sales', [SyncController::class, 'sales'])
         ->middleware('throttle:60,1')
         ->name('sync.sales');
+    // "Find receipt", to void or refund from the register.
+    Route::get('/receipts', [SaleAdjustmentController::class, 'lookup'])
+        ->middleware('throttle:60,1')
+        ->name('receipts');
 
     // Online only: dynamic QR Ph through the store's PayMongo account.
     Route::post('/payments/qrph', [QrPaymentController::class, 'store'])

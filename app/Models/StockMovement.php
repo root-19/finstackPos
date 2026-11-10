@@ -35,6 +35,9 @@ class StockMovement extends Model
     /** Sent back to the supplier. */
     public const RETURN = 'return';
 
+    /** Given back by a customer with a voided or refunded sale, and put back on the shelf (adds stock). */
+    public const CUSTOMER_RETURN = 'customer_return';
+
     /** Types a person can record by hand. */
     public const MANUAL = [self::PURCHASE, self::ADJUSTMENT, self::WASTE, self::USAGE, self::RETURN];
 
