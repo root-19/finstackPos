@@ -30,7 +30,7 @@ it('prints SEO tags on the landing page only, and themes the app dark', function
         ->toContain('<link rel="canonical" href="'.rtrim(config('app.url'), '/').'/">')
         ->toContain('property="og:image" content="'.rtrim(config('app.url'), '/').'/og-image.png"')
         ->toContain('name="twitter:card" content="summary_large_image"')
-        ->toContain('IBM+Plex+Mono')
+        ->not->toContain('fonts.googleapis.com')
         ->toContain('data-theme="marketing"')
         ->not->toContain("localStorage.getItem('finstack-theme')")
         ->not->toContain('id="boot-splash"');
@@ -40,7 +40,7 @@ it('prints SEO tags on the landing page only, and themes the app dark', function
         ->toContain('data-theme="shop"')
         // The saved dark/light choice is applied before the first paint.
         ->toContain("localStorage.getItem('finstack-theme')")
-        ->toContain('IBM+Plex+Mono')
+        ->not->toContain('fonts.googleapis.com')
         ->toContain('id="boot-splash"')
         ->not->toContain('og:title');
 });
@@ -52,7 +52,7 @@ it('serves the sign-in and sign-up pages in the landing shell', function (string
         ->getContent();
 
     expect($html)
-        ->toContain('IBM+Plex+Mono')
+        ->not->toContain('fonts.googleapis.com')
         ->toContain('<link rel="canonical" href="'.rtrim(config('app.url'), '/').$path.'">')
         ->not->toContain('id="boot-splash"');
 })->with([
