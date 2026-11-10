@@ -62,7 +62,7 @@ export function Receipt({ data, settings }: { data: ReceiptData; settings: Recei
 
     return (
         <div
-            className={`bg-white font-mono leading-snug text-black ${narrow ? 'w-[58mm] px-[2mm] text-[10px]' : 'w-[80mm] px-[3mm] text-[11.5px]'} py-[4mm]`}
+            className={`theme-light bg-white font-mono leading-snug text-black ${narrow ? 'w-[58mm] px-[2mm] text-[10px]' : 'w-[80mm] px-[3mm] text-[11.5px]'} py-[4mm]`}
         >
             <div className="text-center">
                 <p className="text-[1.3em] font-bold uppercase">{settings.name}</p>

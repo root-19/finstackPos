@@ -22,7 +22,7 @@ it('passes the live price, product limit and trial to the landing page', functio
         );
 });
 
-it('prints SEO tags and the marketing fonts on the landing page only', function () {
+it('prints SEO tags on the landing page only, and themes the app dark', function () {
     $html = $this->get('/')->assertOk()->getContent();
 
     expect($html)
@@ -31,13 +31,18 @@ it('prints SEO tags and the marketing fonts on the landing page only', function 
         ->toContain('property="og:image" content="'.rtrim(config('app.url'), '/').'/og-image.png"')
         ->toContain('name="twitter:card" content="summary_large_image"')
         ->toContain('IBM+Plex+Mono')
+        ->toContain('data-theme="marketing"')
+        ->not->toContain("localStorage.getItem('finstack-theme')")
         ->not->toContain('id="boot-splash"');
 
-    // App pages keep the app's font and boot splash.
+    // App pages: the shop-floor theme, the same fonts, and the boot splash; no SEO tags.
     expect($this->actingAs(User::factory()->create())->get('/profile')->getContent())
+        ->toContain('data-theme="shop"')
+        // The saved dark/light choice is applied before the first paint.
+        ->toContain("localStorage.getItem('finstack-theme')")
+        ->toContain('IBM+Plex+Mono')
         ->toContain('id="boot-splash"')
-        ->not->toContain('og:title')
-        ->not->toContain('IBM+Plex+Mono');
+        ->not->toContain('og:title');
 });
 
 it('serves the sign-in and sign-up pages in the landing shell', function (string $path, string $component) {

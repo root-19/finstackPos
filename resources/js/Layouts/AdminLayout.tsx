@@ -1,4 +1,5 @@
 import { clearOfflinePageCache } from '@/lib/pwa';
+import ThemeToggle from '@/Components/ThemeToggle';
 import FlashMessage from '@/Components/FlashMessage';
 import { Icon, ICONS, NavIcon } from '@/Components/NavIcons';
 import { PageSkeleton } from '@/Components/Skeleton';
@@ -25,10 +26,10 @@ export default function AdminLayout({ header, children }: PropsWithChildren<{ he
     ];
 
     const sidebar = (
-        <div className="flex h-full flex-col bg-gray-950 text-white">
+        <div className="flex h-full flex-col border-r border-white/10 bg-shop-ink-2 text-white">
             <div className="flex h-14 shrink-0 items-center gap-2.5 px-4">
                 <img src="/brand/fb-profile-black.png" alt="" className="h-8 w-8 rounded-lg ring-1 ring-white/15" />
-                <span className="text-lg font-bold tracking-tight">
+                <span className="font-display text-xl uppercase tracking-[0.02em]">
                     Finstack<span className="text-brand-500">POS</span>
                 </span>
                 <span className="ms-auto rounded-md bg-white/10 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-white/80">
@@ -41,7 +42,7 @@ export default function AdminLayout({ header, children }: PropsWithChildren<{ he
                         key={item.label}
                         href={item.href}
                         aria-current={item.active ? 'page' : undefined}
-                        className={`flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-base transition-colors ${
+                        className={`flex items-center gap-3 px-2.5 py-2.5 font-plex text-[13px] uppercase tracking-[0.08em] transition-colors ${
                             item.active ? 'bg-white/10 font-bold text-white' : 'font-semibold text-white/80 hover:bg-white/5 hover:text-white'
                         }`}
                     >
@@ -132,6 +133,7 @@ export default function AdminLayout({ header, children }: PropsWithChildren<{ he
                             </svg>
                         </button>
                         <div className="min-w-0 flex-1">{header}</div>
+                        <ThemeToggle />
                     </div>
                 </header>
                 <main>{navigating ? <PageSkeleton /> : children}</main>

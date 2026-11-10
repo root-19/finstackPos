@@ -1,4 +1,5 @@
 import FlashMessage from '@/Components/FlashMessage';
+import ThemeToggle from '@/Components/ThemeToggle';
 import { PageSkeleton } from '@/Components/Skeleton';
 import useNavigationLoading from '@/hooks/useNavigationLoading';
 import useOnlineStatus from '@/hooks/useOnlineStatus';
@@ -201,7 +202,7 @@ export default function Authenticated({
                 <Link href={route('dashboard')} className="flex items-center gap-2.5 rounded-lg" aria-label="FinstackPOS dashboard">
                     <img src="/brand/fb-profile-black.png" alt="" className="h-8 w-8 shrink-0 rounded-lg" />
                     {!compact && (
-                        <span className="text-lg font-bold tracking-tight text-gray-950">
+                        <span className="font-display text-xl uppercase tracking-[0.02em] text-gray-950">
                             Finstack<span className="text-brand-600">POS</span>
                         </span>
                     )}
@@ -330,6 +331,8 @@ export default function Authenticated({
 
                         <div className="min-w-0 flex-1 pl-1">{header}</div>
 
+                        <ThemeToggle />
+
                         {canSell && !onPos && (
                             // Full page load so the POS is cached for offline use.
                             <a href={route('pos.index')} className="btn btn-primary btn-sm hidden sm:inline-flex">
@@ -436,7 +439,7 @@ function NavSection({ title, items, compact }: { title: string; items: NavItem[]
             {compact ? (
                 <div className="mx-auto mb-2 h-px w-6 bg-gray-200" aria-hidden />
             ) : (
-                <p className="px-2.5 text-xs font-bold uppercase tracking-wider text-gray-500">{title}</p>
+                <p className="px-2.5 font-plex text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700">{title}</p>
             )}
             <ul className={`space-y-0.5 ${compact ? 'flex flex-col items-center' : 'mt-1.5'}`}>
                 {items.map((item) => (
@@ -451,7 +454,7 @@ function NavSection({ title, items, compact }: { title: string; items: NavItem[]
 
 function NavEntry({ item, compact }: { item: NavItem; compact: boolean }) {
     // Bold, dark labels so the sidebar reads at a glance (active item boldest).
-    const className = `group relative flex items-center rounded-lg text-base transition-colors ${
+    const className = `group relative flex items-center rounded-lg font-plex text-[13px] uppercase tracking-[0.08em] transition-colors ${
         compact ? 'h-10 w-10 justify-center' : 'w-full gap-3 px-2.5 py-2.5'
     } ${item.active ? 'bg-brand-50 font-bold text-brand-700' : 'font-semibold text-gray-800 hover:bg-gray-100 hover:text-gray-950'}`;
 
