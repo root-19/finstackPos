@@ -172,12 +172,12 @@ function Hero({ trialDays, startHref, startLabel }: { trialDays: number; startHr
                     />
                     <TabletFrame
                         {...SHOTS.register}
-                        alt="The FinstackPOS register in a demo café, with product tiles like Kape Barako and Pandesal and the current order in pesos."
-                        fetchPriority="high"
+                        alt="The FinstackPOS register in a demo café: product tiles like Ensaymada ₱45.00 and Iced Americano ₱110.00, and a current sale of Milk Tea Large, 2 Ensaymada and Turon totaling ₱245.00."
+                        priority
                     />
                     <PhoneFrame
                         {...SHOTS.checkout}
-                        alt="Checkout on a phone showing the store's GCash QR code for the customer to scan."
+                        alt="Checkout on a phone: amount due ₱245.00, QR · GCash selected, and the store's QR code for the customer to scan."
                         className="absolute bottom-0 right-0 w-[30%] min-w-[104px]"
                         loading="lazy"
                     />
@@ -380,7 +380,7 @@ function Features() {
                         title="Serve"
                         text="Table QR menus and a customer display. On Pro, tables order and pay from their phones and orders land on a kitchen board."
                         shot={SHOTS.orders}
-                        alt="The orders board with table orders waiting to be prepared."
+                        alt="The table orders board with New, Preparing and Ready to serve columns, showing orders from Tables 1 to 4."
                     />
                     <BentoCard
                         className="lg:col-span-5"
@@ -388,7 +388,7 @@ function Features() {
                         title="Stock"
                         text="Inventory, recipes and suppliers. Stock goes down with every sale; per-branch stock on Pro."
                         shot={SHOTS.inventory}
-                        alt="The inventory list with supplies and their stock levels."
+                        alt="The inventory page: 7 supplies, 3 low on stock, with flour, brown sugar and coffee beans listed."
                     />
                     <BentoCard
                         className="lg:col-span-7"
@@ -398,7 +398,7 @@ function Features() {
                         title="Team & Payroll"
                         text="Schedules, attendance and payroll with SSS, PhilHealth and Pag-IBIG deductions, plus payslips."
                         shot={SHOTS.payslip}
-                        alt="A payslip with earnings and government deductions."
+                        alt="A payslip for a cook: gross ₱10,004.35, SSS, PhilHealth and Pag-IBIG deductions, net pay ₱9,185.38."
                     />
                     <BentoCard className="lg:col-span-4" pro icon="store" title="Branches" text="Run more than one location, with sales and stock per branch." />
                     <BentoCard className="lg:col-span-4" pro icon="lock" title="Staff roles" text="Give each person only the pages they need. Payroll stays with the owner." />

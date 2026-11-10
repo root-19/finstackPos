@@ -96,14 +96,14 @@ function Nav({ links, home }: { links: { href: string; label: string }[]; home: 
 
                 <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
                     {links.map((link) => (
-                        <a key={link.href} href={link.href} className="mk-link px-3.5 py-2 text-[15px]">
+                        <a key={link.href} href={link.href} className="mk-link inline-flex min-h-[44px] items-center px-3.5 text-[15px]">
                             {link.label}
                         </a>
                     ))}
                 </nav>
 
                 <div className="flex items-center gap-2">
-                    <a href={account.href} className="mk-link hidden px-3 py-2 text-[15px] sm:inline-flex">
+                    <a href={account.href} className="mk-link hidden min-h-[44px] items-center px-3 text-[15px] sm:inline-flex">
                         {account.label}
                     </a>
                     <a href={startHref} className="mk-btn-primary hidden min-h-[44px] px-5 text-[15px] sm:inline-flex">
@@ -152,7 +152,7 @@ function Nav({ links, home }: { links: { href: string; label: string }[]; home: 
 
 function Footer({ links }: { links: { href: string; label: string }[] }) {
     const contacts = contactLinks();
-    const linkClass = 'mk-link inline-flex min-h-[44px] items-center text-[15px]';
+    const linkClass = 'mk-link inline-flex min-h-[44px] min-w-[44px] items-center text-[15px]';
 
     return (
         <footer className="border-t border-gray-200 bg-gray-50">
