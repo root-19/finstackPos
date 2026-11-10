@@ -12,8 +12,10 @@ export default function CartPanel({
     subtotal,
     totals,
     discount,
+    label,
     onQuantityChange,
     onClear,
+    onHold,
     onCharge,
     onEditDiscount,
     onRemoveDiscount,
@@ -23,8 +25,12 @@ export default function CartPanel({
     subtotal: number;
     totals: Totals;
     discount: AppliedDiscount | null;
+    /** The name of the held order this sale was resumed from. */
+    label?: string | null;
     onQuantityChange: (lineId: string, quantity: number) => void;
     onClear: () => void;
+    /** Put this sale on hold (an open tab) and start a new one. */
+    onHold?: () => void;
     onCharge: () => void;
     onEditDiscount: () => void;
     onRemoveDiscount: () => void;
@@ -36,17 +42,25 @@ export default function CartPanel({
     return (
         <div className="flex h-full min-h-0 flex-col bg-white">
             <div className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 px-4">
-                <h2 className="text-sm font-semibold text-gray-950">
-                    Current sale
+                <h2 className="flex min-w-0 items-center text-sm font-semibold text-gray-950">
+                    <span className="truncate">{label || 'Current sale'}</span>
                     {units > 0 && (
-                        <span className="ms-2 rounded-md bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{units} item(s)</span>
+                        <span className="ms-2 shrink-0 rounded-md bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{units} item(s)</span>
                     )}
                 </h2>
                 {lines.length > 0 && (
-                    <button type="button" onClick={onClear} className="btn btn-ghost btn-sm text-gray-500 hover:text-red-600">
-                        <Icon name="trash" />
-                        Clear
-                    </button>
+                    <div className="flex shrink-0 items-center">
+                        {onHold && (
+                            <button type="button" onClick={onHold} className="btn btn-ghost btn-sm text-gray-600" title="Save this sale for later and start a new one">
+                                <Icon name="pause" />
+                                Hold
+                            </button>
+                        )}
+                        <button type="button" onClick={onClear} className="btn btn-ghost btn-sm text-gray-500 hover:text-red-600">
+                            <Icon name="trash" />
+                            Clear
+                        </button>
+                    </div>
                 )}
             </div>
 

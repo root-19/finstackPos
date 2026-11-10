@@ -9,7 +9,9 @@ import { Badge, DialogLayout } from '@/Components/ui';
 import usePosSync from '@/hooks/usePosSync';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { displaySupported, DisplayState, terminalId, useDisplayPublisher } from '@/lib/customerDisplay';
-import { db, LocalProduct, LocalSale, LocalSaleItem } from '@/lib/db';
+import useHeldOrders from '@/hooks/useHeldOrders';
+import { db, HeldOrder, LocalProduct, LocalSale, LocalSaleItem } from '@/lib/db';
+import { prepareResume, ResumeChange } from '@/lib/heldOrders';
 import { DISCOUNT_LABELS, PAYMENT_LABELS } from '@/lib/format';
 import { afterSale, canMake, inventoryAt, shortItems } from '@/lib/inventory';
 import { computeTotals, formatMoney, formatPercent } from '@/lib/money';
@@ -25,6 +27,8 @@ import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import CartPanel from './Partials/CartPanel';
 import CheckoutModal, { PaymentResult } from './Partials/CheckoutModal';
 import DiscountModal, { AppliedDiscount } from './Partials/DiscountModal';
+import HeldOrdersModal from './Partials/HeldOrdersModal';
+import HoldOrderModal from './Partials/HoldOrderModal';
 import SizePickerModal from './Partials/SizePickerModal';
 import RejectedSalesModal from './Partials/RejectedSalesModal';
 
@@ -54,6 +58,16 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
     // How the customer is paying, for the customer display.
     const [paymentStage, setPaymentStage] = useState<{ label: string; qrImage: string | null; preparingQr: boolean } | null>(null);
     const [ordersOpen, setOrdersOpen] = useState(false);
+
+    // Held carts (open tabs) on this register. A resumed order remembers its
+    // name and place in the list, so holding it again puts it back as it was.
+    const held = useHeldOrders(merchantId, deviceBranch.branchId, auth.user);
+    const [heldOpen, setHeldOpen] = useState(false);
+    const [holding, setHolding] = useState(false);
+    const [resumedFrom, setResumedFrom] = useState<Pick<HeldOrder, 'id' | 'label' | 'held_at'> | null>(null);
+    // Resuming while another sale is in the cart: asks what to do with it.
+    const [pendingResume, setPendingResume] = useState<HeldOrder | null>(null);
+    const [resumeChanges, setResumeChanges] = useState<{ label: string; changes: ResumeChange[] } | null>(null);
 
     // Orders from the tables' QR codes at this register's branch. Polling also
     // keeps the menus taking orders; accepting one prints its receipt here.
@@ -265,6 +279,7 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
 
         setCart([]);
         setDiscount(null);
+        setResumedFrom(null);
         setCheckingOut(false);
         setPaymentStage(null);
         setCompletedSale(sale);
@@ -276,6 +291,48 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
     };
 
     const money = (cents: number) => formatMoney(cents, merchant.currency);
+
+    const clearCart = () => {
+        setCart([]);
+        setDiscount(null);
+        setResumedFrom(null);
+    };
+
+    /** Bring a held order back into the (empty) cart, at today's prices. */
+    const resumeHeld = async (order: HeldOrder) => {
+        const taken = await held.take(order.id);
+        if (!taken) {
+            return;
+        }
+        const prepared = prepareResume(taken, products, deviceBranch.branchId, merchant);
+        setCart(prepared.items);
+        setDiscount(prepared.discount);
+        setResumedFrom({ id: taken.id, label: taken.label, held_at: taken.held_at });
+        setHeldOpen(false);
+        setPendingResume(null);
+        if (prepared.changes.length > 0) {
+            setResumeChanges({ label: taken.label, changes: prepared.changes });
+        }
+    };
+
+    const requestResume = (order: HeldOrder) => {
+        if (cart.length > 0) {
+            setPendingResume(order);
+        } else {
+            void resumeHeld(order);
+        }
+    };
+
+    const holdCart = async (label: string) => {
+        await held.hold({ label, items: cart, discount }, resumedFrom?.id, resumedFrom?.held_at);
+        clearCart();
+        setHolding(false);
+        setCartOpen(false);
+        // "Hold this one first", from resuming over a sale in progress.
+        if (pendingResume) {
+            await resumeHeld(pendingResume);
+        }
+    };
 
     const toReceipt = (sale: LocalSale): ReceiptData => ({
         reference: sale.client_uuid.slice(0, 8).toUpperCase(),
@@ -364,11 +421,10 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
             subtotal={subtotal}
             totals={totals}
             discount={discount}
+            label={resumedFrom?.label ?? null}
             onQuantityChange={setQuantity}
-            onClear={() => {
-                setCart([]);
-                setDiscount(null);
-            }}
+            onClear={clearCart}
+            onHold={() => setHolding(true)}
             onCharge={() => {
                 setCartOpen(false);
                 setCheckingOut(true);
@@ -417,6 +473,21 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
                 )}
             </div>
             <div className="ms-auto flex shrink-0 items-center gap-1.5">
+                <button
+                    type="button"
+                    onClick={() => setHeldOpen(true)}
+                    className="btn btn-secondary btn-sm"
+                    title="Orders put on hold on this register"
+                    aria-label={`Held orders: ${held.orders.length}`}
+                >
+                    <Icon name="pause" />
+                    <span className="hidden md:inline">Held</span>
+                    {held.orders.length > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-bold text-white">
+                            {held.orders.length}
+                        </span>
+                    )}
+                </button>
                 {merchant.table_ordering && (
                     <button
                         type="button"
@@ -785,6 +856,76 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
                 </DialogLayout>
             </Modal>
 
+            <HoldOrderModal
+                show={holding}
+                initialLabel={resumedFrom?.label ?? ''}
+                summary={`${units} item(s) · ${money(totals.total)}. Saved on this register, even offline.`}
+                onClose={() => {
+                    setHolding(false);
+                    setPendingResume(null);
+                }}
+                onConfirm={holdCart}
+            />
+
+            <HeldOrdersModal
+                show={heldOpen}
+                orders={held.orders}
+                merchant={merchant}
+                branchName={deviceBranch.branches.length > 1 ? (deviceBranch.branch?.name ?? null) : null}
+                catalogReady={storedProducts !== undefined}
+                onClose={() => setHeldOpen(false)}
+                onResume={requestResume}
+                onRename={held.rename}
+                onDiscard={held.discard}
+            />
+
+            <Modal show={pendingResume !== null && !holding} onClose={() => setPendingResume(null)} maxWidth="md">
+                <DialogLayout
+                    title="A sale is in progress"
+                    description={`What should happen to the current sale before opening “${pendingResume?.label ?? ''}”?`}
+                    footer={
+                        <>
+                            <SecondaryButton onClick={() => setPendingResume(null)}>Cancel</SecondaryButton>
+                            <SecondaryButton
+                                className="text-red-700"
+                                onClick={() => {
+                                    if (pendingResume) {
+                                        clearCart();
+                                        void resumeHeld(pendingResume);
+                                    }
+                                }}
+                            >
+                                Discard it
+                            </SecondaryButton>
+                            <PrimaryButton type="button" onClick={() => setHolding(true)}>
+                                Hold it first
+                            </PrimaryButton>
+                        </>
+                    }
+                >
+                    <p className="text-sm text-gray-600">
+                        {units} item(s) · {money(totals.total)}
+                        {resumedFrom ? ` (${resumedFrom.label})` : ''}
+                    </p>
+                </DialogLayout>
+            </Modal>
+
+            <Modal show={resumeChanges !== null} onClose={() => setResumeChanges(null)} maxWidth="md">
+                {resumeChanges && (
+                    <DialogLayout
+                        title={`“${resumeChanges.label}” was updated`}
+                        description="The menu changed while this order was on hold. Check these with the customer."
+                        footer={<PrimaryButton onClick={() => setResumeChanges(null)}>OK</PrimaryButton>}
+                    >
+                        <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
+                            {resumeChanges.changes.map((change, i) => (
+                                <li key={i}>{describeChange(change, money)}</li>
+                            ))}
+                        </ul>
+                    </DialogLayout>
+                )}
+            </Modal>
+
             {printer}
 
             <RejectedSalesModal
@@ -796,6 +937,21 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
             />
         </AuthenticatedLayout>
     );
+}
+
+function describeChange(change: ResumeChange, money: (cents: number) => string): string {
+    switch (change.kind) {
+        case 'price':
+            return `${change.name}: price is now ${money(change.to_cents)} (was ${money(change.from_cents)}).`;
+        case 'discount_removed':
+            return `The ${DISCOUNT_LABELS[change.type]} discount was removed: the store no longer offers it.`;
+        case 'removed':
+            return change.reason === 'needs_size'
+                ? `${change.name} was removed: it now comes in sizes. Add it again and pick one.`
+                : change.reason === 'size'
+                  ? `${change.name} was removed: that size is no longer offered.`
+                  : `${change.name} was removed: it is no longer sold here.`;
+    }
 }
 
 function CategoryChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
