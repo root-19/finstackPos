@@ -29,6 +29,7 @@ export const PERMISSION_ICONS: Record<Permission, ReactNode> = {
     'products.manage': ICONS.products,
     'categories.manage': ICONS.categories,
     'sales.view': ICONS.sales,
+    'sales.void': ICONS.receipt,
     'inventory.manage': ICONS.inventory,
     'staff.manage': ICONS.staff,
     'settings.manage': ICONS.settings,
