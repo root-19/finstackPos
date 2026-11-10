@@ -5,19 +5,14 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { Icon } from '@/Components/NavIcons';
 import TextInput from '@/Components/TextInput';
-import { DohCheck } from '@/lib/db';
+import { CartDiscount, DohCheck } from '@/lib/db';
 import { DISCOUNT_LABELS } from '@/lib/format';
 import { DiscountType, formatPercent } from '@/lib/money';
 import { MerchantSettings } from '@/types';
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
-export interface AppliedDiscount {
-    type: DiscountType;
-    idNumber: string;
-    customerName: string;
-    /** PWD only: what the cashier saw on the DOH registry (null: not checked). */
-    dohCheck: DohCheck | null;
-}
+/** dohCheck is PWD only: what the cashier saw on the DOH registry (null: not checked). */
+export type AppliedDiscount = CartDiscount;
 
 /**
  * The DOH PWD ID registry (pwd.doh.gov.ph), opened already searched for the

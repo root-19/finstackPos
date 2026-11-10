@@ -96,6 +96,34 @@ export interface PosInventory {
     recipes: Record<string, { item_id: number; size_id: number | null; quantity: number }[]>;
 }
 
+/** A Senior / PWD discount as applied to a cart (same shape as the POS's AppliedDiscount). */
+export interface CartDiscount {
+    type: DiscountType;
+    idNumber: string;
+    customerName: string;
+    dohCheck: DohCheck | null;
+}
+
+/**
+ * A cart put on hold (an open tab): kept on this device so it works offline,
+ * resumed later on the same register. Prices are re-checked on resume.
+ */
+export interface HeldOrder {
+    id: string;
+    merchant_id: number;
+    /** The register's branch when it was held; only shown there. */
+    branch_id: number | null;
+    user_id: number;
+    /** Who held it, for the list (the device has no staff directory). */
+    user_name: string;
+    /** Customer name or table, typed by the cashier. */
+    label: string;
+    items: LocalSaleItem[];
+    discount: CartDiscount | null;
+    held_at: string;
+    updated_at: string;
+}
+
 export interface SyncState {
     merchant_id: number;
     /** Server time of the last successful catalog pull. */
@@ -110,6 +138,7 @@ class FinstackDB extends Dexie {
     products!: EntityTable<LocalProduct, 'id'>;
     sales!: EntityTable<LocalSale, 'client_uuid'>;
     syncState!: EntityTable<SyncState, 'merchant_id'>;
+    heldOrders!: EntityTable<HeldOrder, 'id'>;
 
     constructor() {
         super('finstack-pos');
@@ -136,6 +165,12 @@ class FinstackDB extends Dexie {
         this.version(4)
             .stores({})
             .upgrade((tx) => tx.table('syncState').clear());
+
+        // v5: held carts (open tabs). Nothing to re-pull. branch_id isn't
+        // indexed: IndexedDB can't index a null, and a store holds few tabs.
+        this.version(5).stores({
+            heldOrders: 'id, merchant_id, held_at',
+        });
     }
 }
 
