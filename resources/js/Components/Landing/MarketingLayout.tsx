@@ -7,7 +7,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 /**
  * Who is looking: drives the nav and every call to action. Links into the
  * app are plain <a> (full page load): the marketing pages load their own
- * font and skip the app's boot splash, and the POS needs a real load so the
+ * fonts and skip the app's boot splash, and the POS needs a real load so the
  * service worker caches it.
  */
 export function useVisitor() {
@@ -23,25 +23,24 @@ export function useVisitor() {
     };
 }
 
-/** The landing/legal page frame: sticky nav, page content, footer. `home` is true on "/". */
+type NavLink = { href: string; num: string; label: string };
+
+/** The landing/legal page frame: status strip, sticky nav, page content, footer. `home` is true on "/". */
 export default function MarketingLayout({ children, home = false }: { children: ReactNode; home?: boolean }) {
     const prefix = home ? '' : '/';
-    const links = [
-        { href: `${prefix}#features`, label: 'Features' },
-        { href: `${prefix}#pricing`, label: 'Pricing' },
-        { href: `${prefix}#faq`, label: 'FAQ' },
-        { href: `${prefix}#book-demo`, label: 'Book a demo' },
-        { href: '#contact', label: 'Contact' },
+    const links: NavLink[] = [
+        { href: `${prefix}#features`, num: '01', label: 'Features' },
+        { href: `${prefix}#how`, num: '02', label: 'How it works' },
+        { href: `${prefix}#pricing`, num: '03', label: 'Pricing' },
+        { href: `${prefix}#book-demo`, num: '04', label: 'Book a demo' },
     ];
 
     return (
-        <div className="min-h-screen overflow-x-clip bg-white font-jakarta text-[17px] leading-[1.6] text-ink-900 antialiased selection:bg-brand-700 selection:text-white">
-            <a
-                href="#main"
-                className="sr-only z-[70] rounded-xl bg-white px-4 py-3 font-semibold shadow-soft focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-brand-700"
-            >
+        <div className="min-h-screen overflow-x-clip bg-shop-ink font-archivo text-[17px] leading-[1.6] text-shop-paper antialiased selection:bg-brand-700 selection:text-white">
+            <a href="#main" className="mk-btn-red sr-only z-[70] focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
                 Skip to content
             </a>
+            <StatusStrip />
             <Nav links={links} home={home} />
             <main id="main">{children}</main>
             <Footer links={links} />
@@ -49,19 +48,26 @@ export default function MarketingLayout({ children, home = false }: { children: 
     );
 }
 
-function Nav({ links, home }: { links: { href: string; label: string }[]; home: boolean }) {
+/** The thin "open for business" line above the nav. */
+function StatusStrip() {
+    return (
+        <div className="border-b border-shop-paper/10 bg-shop-ink-2">
+            <p className="mk-container flex h-9 items-center justify-center gap-2.5 font-plex text-[12px] uppercase tracking-[0.18em] text-shop-paper/75 sm:justify-start">
+                <span aria-hidden className="relative flex h-2 w-2">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-brand-500 opacity-60" />
+                    <span className="relative h-2 w-2 rounded-full bg-brand-500" />
+                </span>
+                Register open: sells even offline
+            </p>
+        </div>
+    );
+}
+
+function Nav({ links, home }: { links: NavLink[]; home: boolean }) {
     const { startHref, startLabel, account } = useVisitor();
-    const [scrolled, setScrolled] = useState(false);
     const [open, setOpen] = useState(false);
     const toggle = useRef<HTMLButtonElement>(null);
     const firstLink = useRef<HTMLAnchorElement>(null);
-
-    useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 8);
-        onScroll();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
-    }, []);
 
     // Full-screen menu: lock the page behind it, Esc closes, focus moves in and back out.
     useEffect(() => {
@@ -82,33 +88,29 @@ function Nav({ links, home }: { links: { href: string; label: string }[]; home: 
         };
     }, [open]);
 
-    const solid = scrolled || open;
-
     return (
-        <header
-            className={`sticky top-0 z-50 transition-colors duration-200 ${
-                solid ? 'border-b border-gray-200/80 bg-white/85 backdrop-blur-xl' : 'border-b border-transparent bg-white'
-            }`}
-        >
+        <header className="sticky top-0 z-50 border-b border-shop-paper/10 bg-shop-ink/90 backdrop-blur-md">
             <div className="mk-container flex h-16 items-center justify-between gap-4 lg:h-[72px]">
-                <a href={home ? '#main' : '/'} className="flex min-h-[44px] items-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700" aria-label="FinstackPOS home">
-                    <img src="/logo.png" alt="FinstackPOS" width={1320} height={288} className="h-8 w-auto sm:h-9" />
+                <a href={home ? '#main' : '/'} className="flex min-h-[44px] items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500" aria-label="FinstackPOS home">
+                    <img src="/logo-white.png" alt="FinstackPOS" width={1320} height={288} className="h-8 w-auto sm:h-9" />
                 </a>
 
-                <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+                <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
                     {links.map((link) => (
-                        <a key={link.href} href={link.href} className="mk-link inline-flex min-h-[44px] items-center px-3.5 text-[15px]">
+                        <a key={link.href} href={link.href} className="mk-link inline-flex min-h-[44px] items-center gap-2 px-3 text-shop-paper/75 hover:text-shop-paper">
+                            <span className="text-brand-500">{link.num}</span>
                             {link.label}
                         </a>
                     ))}
                 </nav>
 
                 <div className="flex items-center gap-2">
-                    <a href={account.href} className="mk-link hidden min-h-[44px] items-center px-3 text-[15px] sm:inline-flex">
+                    <a href={account.href} className="mk-link hidden min-h-[44px] items-center px-3 text-shop-paper/75 hover:text-shop-paper sm:inline-flex">
                         {account.label}
                     </a>
-                    <a href={startHref} className="mk-btn-primary hidden min-h-[44px] px-5 text-[15px] sm:inline-flex">
+                    <a href={startHref} className="mk-btn-red hidden min-h-[44px] px-5 sm:inline-flex">
                         {startLabel}
+                        <LineIcon name="arrow" className="h-4 w-4" strokeWidth={2} />
                     </a>
                     <button
                         ref={toggle}
@@ -117,32 +119,29 @@ function Nav({ links, home }: { links: { href: string; label: string }[]; home: 
                         aria-expanded={open}
                         aria-controls="mobile-menu"
                         aria-label={open ? 'Close menu' : 'Open menu'}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-900 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 md:hidden"
+                        className="flex h-11 w-11 items-center justify-center text-shop-paper hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 lg:hidden"
                     >
                         <LineIcon name={open ? 'close' : 'menu'} className="h-6 w-6" />
                     </button>
                 </div>
             </div>
 
-            {/* Mobile: a full-screen menu that slides down under the bar. */}
-            <div
-                id="mobile-menu"
-                hidden={!open}
-                className="fixed inset-x-0 bottom-0 top-16 overflow-y-auto bg-white motion-safe:animate-[menu-down_200ms_ease-out] md:hidden"
-            >
+            {/* Mobile/tablet: a full-screen numbered menu under the bar. */}
+            <div id="mobile-menu" hidden={!open} className="absolute inset-x-0 top-full h-[calc(100dvh-4rem)] overflow-y-auto border-t border-shop-paper/10 bg-shop-ink motion-safe:animate-[menu-down_200ms_ease-out] lg:hidden">
                 <nav aria-label="Menu" className="mk-container flex flex-col py-4">
-                    {[...links, account].map((link, i) => (
+                    {[...links, { href: account.href, num: '→', label: account.label }].map((link, i) => (
                         <a
                             key={link.href}
                             ref={i === 0 ? firstLink : undefined}
                             href={link.href}
                             onClick={() => setOpen(false)}
-                            className="flex min-h-[56px] items-center border-b border-gray-100 text-xl font-bold text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+                            className="flex min-h-[64px] items-baseline gap-4 border-b border-shop-paper/10 py-3 font-display text-3xl uppercase focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                         >
+                            <span className="font-plex text-[13px] text-brand-500">{link.num}</span>
                             {link.label}
                         </a>
                     ))}
-                    <a href={startHref} className="mk-btn-primary mt-6 w-full text-lg">
+                    <a href={startHref} className="mk-btn-red mt-8 w-full">
                         {startLabel}
                     </a>
                 </nav>
@@ -151,57 +150,59 @@ function Nav({ links, home }: { links: { href: string; label: string }[]; home: 
     );
 }
 
-function Footer({ links }: { links: { href: string; label: string }[] }) {
+function Footer({ links }: { links: NavLink[] }) {
     const contacts = contactLinks();
-    const linkClass = 'mk-link inline-flex min-h-[44px] min-w-[44px] items-center text-[15px]';
+    const linkClass = 'mk-link inline-flex min-h-[44px] min-w-[44px] items-center text-shop-paper/75 hover:text-shop-paper';
 
     return (
-        <footer className="border-t border-gray-200 bg-gray-50">
+        <footer className="border-t border-shop-paper/10 bg-shop-ink">
             <div className="mk-container grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-12">
                 <div className="sm:col-span-2 lg:col-span-5">
-                    <img src="/logo.png" alt="FinstackPOS" width={1320} height={288} loading="lazy" className="h-9 w-auto" />
-                    <p className="mt-4 max-w-sm text-[15px] text-gray-600">POS, inventory and payroll in one app, made for Philippine small businesses.</p>
+                    <img src="/logo-white.png" alt="FinstackPOS" width={1320} height={288} loading="lazy" className="h-9 w-auto" />
+                    <p className="mt-4 max-w-sm text-[15px] text-shop-paper/70">POS, inventory and payroll in one app. Built for Philippine small businesses.</p>
                 </div>
-                <nav aria-labelledby="footer-product" className="lg:col-span-2">
-                    <h2 id="footer-product" className="text-sm font-bold text-ink-900">
+                <nav aria-labelledby="footer-product" className="lg:col-span-3">
+                    <h2 id="footer-product" className="mk-label text-brand-500">
                         Product
                     </h2>
                     <ul className="mt-3">
-                        {links
-                            .filter((l) => l.label !== 'Contact')
-                            .map((link) => (
-                                <li key={link.href}>
-                                    <a href={link.href} className={linkClass}>
-                                        {link.label}
-                                    </a>
-                                </li>
-                            ))}
+                        {links.map((link) => (
+                            <li key={link.href}>
+                                <a href={link.href} className={linkClass}>
+                                    {link.label}
+                                </a>
+                            </li>
+                        ))}
                     </ul>
                 </nav>
-                <div id="contact" className="scroll-mt-24 lg:col-span-3">
-                    <h2 className="text-sm font-bold text-ink-900">Contact</h2>
-                    {contacts.length > 0 ? (
-                        <ul className="mt-3">
-                            {contacts.map((link) => (
+                <div id="contact" className="scroll-mt-24 lg:col-span-2">
+                    <h2 className="mk-label text-brand-500">Contact</h2>
+                    <ul className="mt-3">
+                        {contacts.length > 0 ? (
+                            contacts.map((link) => (
                                 <li key={link.href}>
                                     <a href={link.href} className={linkClass} {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
                                         {link.label}
                                     </a>
                                 </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="mt-3 max-w-xs text-[15px] text-gray-600">Already have a store? Use the Support chat inside the app.</p>
-                    )}
+                            ))
+                        ) : (
+                            <li>
+                                <a href={links[3].href} className={linkClass}>
+                                    Book a demo
+                                </a>
+                            </li>
+                        )}
+                    </ul>
                 </div>
                 <nav aria-labelledby="footer-legal" className="lg:col-span-2">
-                    <h2 id="footer-legal" className="text-sm font-bold text-ink-900">
+                    <h2 id="footer-legal" className="mk-label text-brand-500">
                         Legal
                     </h2>
                     <ul className="mt-3">
                         <li>
                             <a href={route('privacy')} className={linkClass}>
-                                Privacy Policy
+                                Privacy
                             </a>
                         </li>
                         <li>
@@ -212,8 +213,11 @@ function Footer({ links }: { links: { href: string; label: string }[] }) {
                     </ul>
                 </nav>
             </div>
-            <div className="border-t border-gray-200">
-                <p className="mk-container py-6 text-sm text-gray-600">© {new Date().getFullYear()} FinstackPOS. All rights reserved.</p>
+            <div className="border-t border-shop-paper/10">
+                <p className="mk-container flex flex-col gap-1 py-6 font-plex text-[12px] uppercase tracking-[0.16em] text-shop-paper/60 sm:flex-row sm:justify-between">
+                    <span>© {new Date().getFullYear()} FinstackPOS</span>
+                    <span>Sell · Track · Pay</span>
+                </p>
             </div>
         </footer>
     );

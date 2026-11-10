@@ -21,7 +21,7 @@ it('passes the live price, product limit and trial to the landing page', functio
         );
 });
 
-it('prints SEO tags and the marketing font on the landing page only', function () {
+it('prints SEO tags and the marketing fonts on the landing page only', function () {
     $html = $this->get('/')->assertOk()->getContent();
 
     expect($html)
@@ -29,13 +29,13 @@ it('prints SEO tags and the marketing font on the landing page only', function (
         ->toContain('<link rel="canonical" href="'.rtrim(config('app.url'), '/').'/">')
         ->toContain('property="og:image" content="'.rtrim(config('app.url'), '/').'/og-image.png"')
         ->toContain('name="twitter:card" content="summary_large_image"')
-        ->toContain('Plus+Jakarta+Sans')
+        ->toContain('IBM+Plex+Mono')
         ->not->toContain('id="boot-splash"');
 
     expect($this->get('/login')->getContent())
         ->toContain('id="boot-splash"')
         ->not->toContain('og:title')
-        ->not->toContain('Plus+Jakarta+Sans');
+        ->not->toContain('IBM+Plex+Mono');
 });
 
 it('serves the draft legal pages', function (string $path, string $component) {

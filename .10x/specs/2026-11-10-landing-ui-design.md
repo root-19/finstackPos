@@ -1,4 +1,10 @@
-# Spec: Landing page UI redesign ("modern premium")
+# Spec: Landing page UI redesign
+
+> **Revision (2026-11-10, later):** the visual design now follows the "shop floor / work order" format of
+> jasprintcraft.vercel.app, see ADR-003. Tokens and section list below are superseded by ADR-003; the honesty rules,
+> pricing props, SEO, legal pages and "no video" still apply. A "Book a demo" section (04) was added.
+
+## Original version ("modern premium")
 
 Feature slug: `landing-ui` · Branch: `feature/landing-ui` · Status: **approved by user 2026-11-10** (chose "Modern premium" over
 "Dark and bold" / "Bright and friendly"; the receipt concept on `feature/landing-receipt` was rejected and is abandoned).

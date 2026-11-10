@@ -199,111 +199,127 @@
 }
 
 /*
- * Scroll reveals for the landing page (see Components/Landing/Reveal).
- * Content stays visible without JavaScript and for reduced-motion users.
- */
-@layer utilities {
-    .js-reveal {
-        opacity: 0;
-        transform: translateY(28px);
-        transition:
-            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-        transition-delay: var(--reveal-delay, 0ms);
-        will-change: opacity, transform;
-    }
-
-    .js-reveal.is-visible {
-        opacity: 1;
-        transform: none;
-    }
-}
-
-/* Landing 3D sale (Components/Landing/Transaction3D). */
-@keyframes stage-progress {
-    from {
-        transform: scaleX(0);
-    }
-    to {
-        transform: scaleX(1);
-    }
-}
-
-@keyframes scan-line {
-    from {
-        top: 4%;
-    }
-    to {
-        top: 94%;
-    }
-}
-
-/*
- * Landing + legal pages (marketing). Tokens: Plus Jakarta Sans, 1200px
- * content width, sections py-20 / lg:py-28, rounded-2xl cards, rounded-xl
- * buttons, rounded-full chips, soft shadows, brand red as the accent only.
+ * Landing + legal pages (marketing): a dark shop floor with paper sections.
+ * Anton for big uppercase headlines, Archivo for text, IBM Plex Mono for
+ * labels and buttons. Square corners; red (brand) is the only accent.
  */
 @layer components {
     .mk-container {
-        @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8;
+        @apply mx-auto w-full max-w-[1240px] px-4 sm:px-6 lg:px-10;
     }
 
     .mk-section {
         @apply py-20 lg:py-28;
     }
 
+    /* Big uppercase display headlines. */
     .mk-h1 {
-        @apply font-extrabold text-ink-900;
-        font-size: clamp(2.5rem, 6vw, 4.5rem);
-        line-height: 1.04;
-        letter-spacing: -0.03em;
-        text-wrap: balance;
+        @apply font-display uppercase;
+        font-size: clamp(3.2rem, 9vw, 7.4rem);
+        line-height: 0.9;
+        letter-spacing: -0.01em;
     }
 
     .mk-h2 {
-        @apply font-extrabold text-ink-900;
-        font-size: clamp(2rem, 4vw, 3rem);
-        line-height: 1.1;
-        letter-spacing: -0.03em;
-        text-wrap: balance;
+        @apply font-display uppercase;
+        font-size: clamp(2.6rem, 6vw, 4.75rem);
+        line-height: 0.92;
+        letter-spacing: -0.005em;
     }
 
-    .mk-lead {
-        @apply text-[17px] text-gray-600 sm:text-lg;
-        line-height: 1.6;
-    }
-
-    .mk-eyebrow {
-        @apply text-sm font-bold uppercase tracking-[0.12em] text-brand-700;
+    /* Mono labels: "[ Register 01 ]", "01 — Features". */
+    .mk-label {
+        @apply font-plex text-[13px] font-medium uppercase tracking-[0.18em];
     }
 
     .mk-btn {
-        @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-6 text-base font-semibold transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2;
+        @apply inline-flex min-h-[48px] items-center justify-center gap-2 px-6 font-plex text-[13px] font-semibold uppercase tracking-[0.18em] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-shop-ink;
     }
 
-    .mk-btn-primary {
-        @apply mk-btn bg-brand-700 text-white shadow-soft hover:-translate-y-0.5 hover:bg-brand-800;
+    .mk-btn-red {
+        @apply mk-btn bg-brand-700 text-white hover:bg-brand-600;
     }
 
-    .mk-btn-secondary {
-        @apply mk-btn border border-gray-300 bg-white text-ink-900 hover:-translate-y-0.5 hover:border-gray-400 hover:bg-gray-50;
+    .mk-btn-line {
+        @apply mk-btn border border-current hover:bg-white/10;
     }
 
-    .mk-card {
-        @apply rounded-2xl bg-white shadow-soft ring-1 ring-gray-200/70;
-    }
-
-    /* A 24px line icon in a soft tinted square. */
-    .mk-icon {
-        @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600;
+    .mk-btn-ink {
+        @apply mk-btn bg-shop-ink text-shop-paper hover:bg-brand-700;
     }
 
     .mk-chip {
-        @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700;
+        @apply inline-flex items-center gap-1.5 border px-2.5 py-1 font-plex text-[12px] uppercase tracking-[0.12em];
     }
 
     .mk-link {
-        @apply rounded-md font-medium text-gray-600 transition-colors duration-150 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2;
+        @apply font-plex text-[13px] uppercase tracking-[0.16em] transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500;
+    }
+
+    /* Ticket stub: paper with round notches cut out of both sides. */
+    .mk-ticket {
+        @apply bg-shop-paper text-shop-ink;
+        -webkit-mask:
+            radial-gradient(11px at 0, #0000 98%, #000) 0 / 51% 100% no-repeat,
+            radial-gradient(11px at 100%, #0000 98%, #000) 100% / 51% 100% no-repeat;
+        mask:
+            radial-gradient(11px at 0, #0000 98%, #000) 0 / 51% 100% no-repeat,
+            radial-gradient(11px at 100%, #0000 98%, #000) 100% / 51% 100% no-repeat;
+    }
+
+    /* Hot glow from the bottom right, like a heat lamp. */
+    .mk-heat {
+        background:
+            radial-gradient(120% 70% at 85% 110%, rgb(200 16 46 / 0.55) 0%, rgb(94 7 16 / 0.45) 35%, transparent 70%),
+            linear-gradient(180deg, #0d0b0a 0%, #120a0a 100%);
+    }
+
+    /* A printed dot screen, in the current text color. */
+    .mk-halftone {
+        background-image: radial-gradient(circle, currentColor 1.1px, #0000 1.4px);
+        background-size: 9px 9px;
+    }
+
+    /* Perforation line (tear here). */
+    .mk-perf {
+        background-image: linear-gradient(90deg, currentColor 50%, transparent 0);
+        background-size: 9px 1px;
+        height: 1px;
+    }
+
+    /* Feature rows: a red wipe sweeps in on hover. */
+    .mk-row {
+        isolation: isolate;
+        position: relative;
+    }
+    .mk-row::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(90deg, #c8102e 0%, #5e0710 100%);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.45s cubic-bezier(0.7, 0, 0.2, 1);
+    }
+    .mk-row:hover::before,
+    .mk-row:focus-within::before {
+        transform: scaleX(1);
+    }
+
+    /* Order-slip style inputs: no box, just an underline. */
+    .mk-field {
+        @apply block w-full rounded-none border-0 border-b-[1.5px] border-shop-ink/40 bg-transparent px-0 pb-2 pt-1.5 text-[17px] text-shop-ink placeholder:text-shop-ink/45 focus:border-brand-700 focus:ring-0;
+    }
+
+    .mk-marquee {
+        animation: mk-marquee 32s linear infinite;
+    }
+}
+
+@keyframes mk-marquee {
+    to {
+        transform: translateX(-50%);
     }
 }
 
@@ -324,16 +340,11 @@
         scroll-behavior: auto;
     }
 
-    .mk-btn,
-    .mk-btn-primary,
-    .mk-btn-secondary {
-        transition: none;
-        transform: none !important;
+    .mk-marquee {
+        animation: none;
     }
 
-    .js-reveal {
-        opacity: 1;
-        transform: none;
+    .mk-row::before {
         transition: none;
     }
 

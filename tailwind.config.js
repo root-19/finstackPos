@@ -18,11 +18,9 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
                 // Landing + legal pages only; loaded in app.blade.php when $marketing is set.
-                jakarta: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
-            },
-            // Landing page tokens (see the `mk-*` classes in app.css).
-            maxWidth: {
-                content: '1200px',
+                display: ['Anton', 'Impact', ...defaultTheme.fontFamily.sans],
+                archivo: ['Archivo', ...defaultTheme.fontFamily.sans],
+                plex: ['"IBM Plex Mono"', ...defaultTheme.fontFamily.mono],
             },
             // One step larger than Tailwind's defaults (12px / 14px) for readability.
             fontSize: {
@@ -50,13 +48,18 @@ export default {
                 },
                 // App background behind cards and tables.
                 surface: '#F7F8FA',
+                // Landing + legal pages: a dark "shop floor" with paper sections. Red stays brand-500/700/800.
+                shop: {
+                    ink: '#0D0B0A',
+                    'ink-2': '#161311',
+                    paper: '#EFE8DC',
+                    'paper-2': '#E4DCCD',
+                    ember: '#5E0710',
+                },
             },
             boxShadow: {
                 card: '0 1px 2px 0 rgb(16 24 40 / 0.04)',
                 pop: '0 12px 32px -8px rgb(16 24 40 / 0.18), 0 2px 6px -2px rgb(16 24 40 / 0.08)',
-                // Landing page: soft and layered, never harsh.
-                soft: '0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06)',
-                'soft-lg': '0 2px 4px rgba(0, 0, 0, 0.04), 0 24px 48px -12px rgba(0, 0, 0, 0.12)',
             },
             keyframes: {
                 rise: {
