@@ -26,6 +26,7 @@ export default function Privacy() {
                 <h2>3. What we collect</h2>
                 <ul>
                     <li>Account details: name, email address and a hashed password.</li>
+                    <li>Demo requests: the name, business, email, mobile number, preferred schedule and notes you send with the Book a demo form, used only to schedule the demo.</li>
                     <li>Store records: products, prices, stock, suppliers, sales, and the cashier who made each sale.</li>
                     <li>Senior Citizen and PWD discounts: the ID number and name the cashier records on the sale.</li>
                     <li>

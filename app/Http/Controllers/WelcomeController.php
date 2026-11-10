@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DemoRequest;
 use App\Support\Platform;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -24,6 +25,12 @@ class WelcomeController extends Controller
                 'free_product_limit' => Platform::freeProductLimit(),
             ],
             'trial' => ['days' => Platform::trialDays()],
+            // "Book a demo": the same slots and dates the form is validated against.
+            'demo' => [
+                'slots' => DemoRequest::slots(),
+                ...DemoRequest::dateRange(),
+                'minutes' => DemoRequest::MINUTES,
+            ],
         ])->withViewData(self::meta(
             'FinstackPOS: POS, inventory and payroll for Philippine small businesses',
             'Sell, track stock and pay your team from any device, even when the internet drops. Free plan, GCash, Maya and QR Ph, Senior & PWD discounts.',

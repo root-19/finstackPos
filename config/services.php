@@ -18,6 +18,11 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
+    // Where the landing page's "Book a demo" requests are emailed (empty = saved only).
+    'demo_requests' => [
+        'notify' => env('DEMO_REQUEST_NOTIFY_EMAIL'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

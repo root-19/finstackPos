@@ -1,9 +1,9 @@
+import BookDemo, { DemoOptions } from '@/Components/Landing/BookDemo';
 import { PhoneFrame, TabletFrame } from '@/Components/Landing/DeviceFrames';
 import Faq, { FaqItem } from '@/Components/Landing/Faq';
 import LineIcon, { IconName } from '@/Components/Landing/LineIcon';
 import MarketingLayout, { useVisitor } from '@/Components/Landing/MarketingLayout';
 import Reveal from '@/Components/Landing/Reveal';
-import { contactLinks } from '@/Components/Landing/contact';
 import { formatMoney } from '@/lib/money';
 import { PRO_MODULES } from '@/lib/proModules';
 import { PageProps } from '@/types';
@@ -26,6 +26,8 @@ type Props = PageProps<{
     /** From Admin → Pricing (App\Support\Platform). */
     pricing: { price_cents: number; max_months: number; free_product_limit: number };
     trial: { days: number };
+    /** "Book a demo" slots and dates (same as the server's validation). */
+    demo: DemoOptions;
 }>;
 
 /** Screenshots of the real app (demo store), see database/seeders/LandingDemoSeeder.php. */
@@ -104,9 +106,8 @@ const PRO_FEATURES = [
 /** Real customer quotes only. Empty until a customer agrees to be quoted; never invent one. */
 const TESTIMONIALS: { quote: string; name: string; business: string }[] = [];
 
-export default function Welcome({ pricing, trial }: Props) {
+export default function Welcome({ pricing, trial, demo }: Props) {
     const { signedIn, startHref, startLabel } = useVisitor();
-    const hasContact = contactLinks().length > 0;
 
     return (
         <>
@@ -121,11 +122,12 @@ export default function Welcome({ pricing, trial }: Props) {
                 <WhoItsFor />
                 <WorksWith />
                 <HowItWorks />
-                <Pricing pricing={pricing} trialDays={trial.days} signedIn={signedIn} hasContact={hasContact} />
+                <Pricing pricing={pricing} trialDays={trial.days} signedIn={signedIn} />
+                <BookDemo options={demo} />
                 <DataSafe />
                 {TESTIMONIALS.length > 0 && <Testimonials />}
                 <FaqSection trialDays={trial.days} maxMonths={pricing.max_months} />
-                <FinalCta startHref={startHref} startLabel={startLabel} hasContact={hasContact} />
+                <FinalCta startHref={startHref} startLabel={startLabel} />
             </MarketingLayout>
         </>
     );
@@ -555,12 +557,10 @@ function Pricing({
     pricing,
     trialDays,
     signedIn,
-    hasContact,
 }: {
     pricing: Props['pricing'];
     trialDays: number;
     signedIn: boolean;
-    hasContact: boolean;
 }) {
     const proCta = signedIn ? 'Get Pro' : trialDays > 0 ? `Start ${trialDays}-day free trial` : 'Get Pro';
 
@@ -605,13 +605,9 @@ function Pricing({
                         description="Need something FinstackPOS doesn't do yet? Tell us what your business needs."
                         features={[]}
                         cta={
-                            hasContact ? (
-                                <a href="#contact" className="mk-btn-secondary w-full">
-                                    Talk to us
-                                </a>
-                            ) : (
-                                <p className="text-[15px] text-gray-600">Message us from the Support chat inside the app.</p>
-                            )
+                            <a href="#book-demo" className="mk-btn-secondary w-full">
+                                Book a demo
+                            </a>
                         }
                     />
                 </div>
@@ -742,7 +738,7 @@ function FaqSection({ trialDays, maxMonths }: { trialDays: number; maxMonths: nu
 
 /* ---------------------------------------------------------------- Final CTA */
 
-function FinalCta({ startHref, startLabel, hasContact }: { startHref: string; startLabel: string; hasContact: boolean }) {
+function FinalCta({ startHref, startLabel }: { startHref: string; startLabel: string }) {
     return (
         <section className="mk-section">
             <div className="mk-container">
@@ -756,11 +752,9 @@ function FinalCta({ startHref, startLabel, hasContact }: { startHref: string; st
                         >
                             {startLabel}
                         </a>
-                        {hasContact && (
-                            <a href="#contact" className="mk-btn border border-white/40 text-white hover:-translate-y-0.5 hover:bg-white/10 focus-visible:ring-white focus-visible:ring-offset-brand-700">
-                                Talk to us
-                            </a>
-                        )}
+                        <a href="#book-demo" className="mk-btn border border-white/40 text-white hover:-translate-y-0.5 hover:bg-white/10 focus-visible:ring-white focus-visible:ring-offset-brand-700">
+                            Book a demo
+                        </a>
                     </div>
                 </Reveal>
             </div>

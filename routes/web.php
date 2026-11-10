@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\SupportController as AdminSupportController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemoRequestController;
 use App\Http\Controllers\DiningTableController;
 use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Inventory\RecipeController;
@@ -40,6 +41,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', WelcomeController::class)->name('welcome');
+// "Book a demo" from the landing page (public; a few tries per minute per visitor).
+Route::post('/book-demo', [DemoRequestController::class, 'store'])->middleware('throttle:5,1')->name('demo.store');
 
 // Legal drafts, in the landing page's receipt style.
 Route::get('/privacy', fn () => Inertia::render('Legal/Privacy')->withViewData(WelcomeController::meta(
