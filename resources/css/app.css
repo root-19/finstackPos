@@ -1,3 +1,5 @@
+@import './fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,6 +7,141 @@
 @layer base {
     html {
         scroll-behavior: smooth;
+    }
+
+    /*
+     * Theme colors (tailwind.config.js reads them as `rgb(var(--x) / a)`).
+     * Light is the default (landing, legal and auth pages, and every print).
+     */
+    :root {
+        --gray-50: 249 250 251;
+        --gray-100: 243 244 246;
+        --gray-200: 229 231 235;
+        --gray-300: 209 213 219;
+        --gray-400: 156 163 175;
+        --gray-500: 107 114 128;
+        --gray-600: 75 85 99;
+        --gray-700: 55 65 81;
+        --gray-800: 31 41 55;
+        --gray-900: 17 24 39;
+        --gray-950: 3 7 18;
+        --surface: 247 248 250;
+        --card: 255 255 255;
+        --brand-50: 255 241 241;
+        --brand-100: 255 223 223;
+        --brand-200: 255 197 199;
+    }
+
+    /* Form controls follow the theme too (the forms plugin paints them white). */
+    :where(html[data-theme='shop'])
+        :is(
+            [type='text'],
+            [type='email'],
+            [type='url'],
+            [type='password'],
+            [type='number'],
+            [type='date'],
+            [type='datetime-local'],
+            [type='month'],
+            [type='search'],
+            [type='tel'],
+            [type='time'],
+            [type='week'],
+            [multiple],
+            textarea,
+            select
+        ) {
+        background-color: rgb(var(--card));
+        color: rgb(var(--gray-950));
+    }
+}
+
+/*
+ * The app's "shop floor" theme (set on <html> in app.blade.php for every page
+ * that isn't a marketing page): a dark ink floor, cards one step lighter,
+ * cream paper text, square corners. Screen only, so printing stays black on
+ * white. `.theme-light` keeps a piece light (e.g. the on-screen receipt).
+ */
+@media screen {
+    html[data-theme='shop'] {
+        color-scheme: dark;
+        --gray-50: 28 24 21;
+        --gray-100: 36 32 28;
+        --gray-200: 51 45 40;
+        --gray-300: 74 67 60;
+        --gray-400: 138 131 121;
+        --gray-500: 163 156 145;
+        --gray-600: 189 182 171;
+        --gray-700: 211 204 192;
+        --gray-800: 225 218 206;
+        --gray-900: 234 227 215;
+        --gray-950: 239 232 220;
+        --surface: 13 11 10;
+        --card: 22 19 17;
+        --brand-50: 46 14 18;
+        --brand-100: 66 16 22;
+        --brand-200: 94 7 16;
+    }
+
+    html[data-theme='shop'] body {
+        background-color: rgb(var(--surface));
+        color: rgb(var(--gray-950));
+    }
+
+    /* White surfaces become cards on the dark floor. */
+    html[data-theme='shop'] .bg-white,
+    html[data-theme='shop'] .hover\:bg-white:hover {
+        background-color: rgb(var(--card) / var(--tw-bg-opacity, 1));
+    }
+    html[data-theme='shop'] .bg-white\/95 {
+        background-color: rgb(var(--card) / 0.95);
+    }
+    html[data-theme='shop'] .bg-white\/90 {
+        background-color: rgb(var(--card) / 0.9);
+    }
+    html[data-theme='shop'] .bg-white\/80 {
+        background-color: rgb(var(--card) / 0.8);
+    }
+    html[data-theme='shop'] .bg-white\/70 {
+        background-color: rgb(var(--card) / 0.7);
+    }
+
+    /* Dark chips (now paper-colored) keep readable text. */
+    html[data-theme='shop'] :is(.bg-gray-700, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-gray-900\/80).text-white,
+    html[data-theme='shop'] .btn-dark,
+    html[data-theme='shop'] .badge-dark {
+        color: rgb(13 11 10);
+    }
+
+    /* Red text needs a lighter red to read on the dark floor (buttons keep the brand red). */
+    html[data-theme='shop'] :is(.text-brand-600, .text-brand-700, .text-brand-800),
+    html[data-theme='shop'] :is(.hover\:text-brand-700, .hover\:text-brand-800):hover {
+        color: #ff5a5a;
+    }
+
+    /* Square corners in both app modes, like the landing page (pills and avatars stay round). */
+    html:is([data-theme='shop'], [data-theme='light']) :is(.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl) {
+        border-radius: 0;
+    }
+
+    html[data-theme='shop'] .theme-light {
+        color-scheme: light;
+        --gray-50: 249 250 251;
+        --gray-100: 243 244 246;
+        --gray-200: 229 231 235;
+        --gray-300: 209 213 219;
+        --gray-400: 156 163 175;
+        --gray-500: 107 114 128;
+        --gray-600: 75 85 99;
+        --gray-700: 55 65 81;
+        --gray-800: 31 41 55;
+        --gray-900: 17 24 39;
+        --gray-950: 3 7 18;
+        --card: 255 255 255;
+    }
+    html[data-theme='shop'] .theme-light.bg-white,
+    html[data-theme='shop'] .theme-light .bg-white {
+        background-color: #fff;
     }
 }
 
@@ -28,13 +165,13 @@
 
     /* Surfaces */
     .card {
-        @apply rounded-xl border border-gray-200 bg-white shadow-card;
+        @apply border border-gray-200 bg-card shadow-card;
     }
     .card-header {
         @apply flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 sm:px-5;
     }
     .card-title {
-        @apply text-sm font-semibold text-gray-950;
+        @apply font-plex text-[13px] font-semibold uppercase tracking-[0.12em] text-gray-950;
     }
     .card-subtitle {
         @apply text-xs text-gray-500;
@@ -45,19 +182,19 @@
 
     /* Buttons */
     .btn {
-        @apply inline-flex h-9 select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50;
+        @apply inline-flex h-9 select-none items-center justify-center gap-2 whitespace-nowrap px-3.5 text-sm font-bold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50;
     }
     .btn-primary {
         @apply bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800;
     }
     .btn-secondary {
-        @apply border border-gray-300 bg-white text-gray-900 shadow-sm hover:border-gray-400 hover:bg-gray-50;
+        @apply border border-gray-300 bg-card text-gray-900 shadow-sm hover:border-gray-400 hover:bg-gray-50;
     }
     .btn-ghost {
         @apply text-gray-700 hover:bg-gray-100 hover:text-gray-950;
     }
     .btn-danger {
-        @apply border border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50;
+        @apply border border-red-200 bg-card text-red-700 hover:border-red-300 hover:bg-red-50;
     }
     .btn-danger-solid {
         @apply bg-red-600 text-white shadow-sm hover:bg-red-700;
@@ -77,10 +214,10 @@
 
     /* Forms */
     .label {
-        @apply block text-sm font-medium text-gray-700;
+        @apply block font-plex text-[12px] font-semibold uppercase tracking-[0.12em] text-gray-600;
     }
     .input {
-        @apply block w-full rounded-lg border-gray-300 bg-white text-sm text-gray-950 shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:ring-brand-500/25 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500;
+        @apply block w-full rounded-none border-gray-300 bg-card text-sm text-gray-950 shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:ring-brand-500/25 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500;
     }
     .help {
         @apply mt-1 text-xs text-gray-500;
@@ -89,7 +226,7 @@
         @apply mt-1 text-xs font-medium text-red-600;
     }
     .checkbox {
-        @apply h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500/30;
+        @apply h-4 w-4 rounded-none border-gray-300 bg-card text-brand-600 focus:ring-brand-500/30;
     }
 
     /* Tables: <table class="data-table"> inside a .card with overflow-x-auto */
@@ -97,7 +234,7 @@
         @apply min-w-full text-sm;
     }
     .data-table thead th {
-        @apply whitespace-nowrap border-b border-gray-200 bg-gray-50/80 px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500;
+        @apply whitespace-nowrap border-b border-gray-200 bg-gray-50/80 px-4 py-2.5 text-left font-plex text-[12px] font-semibold uppercase tracking-[0.12em] text-gray-500;
     }
     .data-table tbody td {
         @apply border-b border-gray-100 px-4 py-3 align-middle text-gray-700;
@@ -117,7 +254,7 @@
 
     /* Badges */
     .badge {
-        @apply inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset;
+        @apply inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 font-plex text-[11px] font-semibold uppercase tracking-[0.08em] ring-1 ring-inset;
     }
     .badge-gray {
         @apply bg-gray-50 text-gray-700 ring-gray-200;
@@ -143,13 +280,13 @@
 
     /* Segmented control (view switches, filters) */
     .segmented {
-        @apply inline-flex items-center rounded-lg border border-gray-200 bg-gray-100/80 p-0.5;
+        @apply inline-flex items-center border border-gray-200 bg-gray-100/80 p-0.5;
     }
     .segmented-item {
-        @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-950;
+        @apply inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:text-gray-950;
     }
     .segmented-item-active {
-        @apply bg-white text-gray-950 shadow-sm ring-1 ring-gray-200;
+        @apply bg-card text-gray-950 shadow-sm ring-1 ring-gray-200;
     }
 
     /* Underlined tabs (a module's sub-pages) */
@@ -157,7 +294,7 @@
         @apply -mb-px flex gap-6 overflow-x-auto border-b border-gray-200;
     }
     .tab {
-        @apply inline-flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent pb-2.5 pt-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900;
+        @apply inline-flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent pb-2.5 pt-1 font-plex text-[13px] font-semibold uppercase tracking-[0.1em] text-gray-500 transition-colors hover:text-gray-900;
     }
     .tab-active {
         @apply border-brand-600 text-gray-950;
@@ -165,13 +302,13 @@
 
     /* Key numbers */
     .stat {
-        @apply rounded-xl border border-gray-200 bg-white p-4 shadow-card;
+        @apply border border-gray-200 bg-card p-4 shadow-card;
     }
     .stat-label {
-        @apply text-xs font-medium text-gray-500;
+        @apply font-plex text-[12px] font-semibold uppercase tracking-[0.12em] text-gray-500;
     }
     .stat-value {
-        @apply mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-950;
+        @apply mt-1 font-display text-3xl tabular-nums tracking-[0.01em] text-gray-950;
     }
 }
 
@@ -199,42 +336,139 @@
 }
 
 /*
- * Scroll reveals for the landing page (see Components/Landing/Reveal).
- * Content stays visible without JavaScript and for reduced-motion users.
+ * Landing + legal pages (marketing): a dark shop floor with paper sections.
+ * Anton for big uppercase headlines, Archivo for text, IBM Plex Mono for
+ * labels and buttons. Square corners; red (brand) is the only accent.
  */
-@layer utilities {
-    .js-reveal {
-        opacity: 0;
-        transform: translateY(28px);
-        transition:
-            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-        transition-delay: var(--reveal-delay, 0ms);
-        will-change: opacity, transform;
+@layer components {
+    .mk-container {
+        @apply mx-auto w-full max-w-[1240px] px-4 sm:px-6 lg:px-10;
     }
 
-    .js-reveal.is-visible {
-        opacity: 1;
-        transform: none;
+    .mk-section {
+        @apply py-20 lg:py-28;
     }
-}
 
-/* Landing 3D sale (Components/Landing/Transaction3D). */
-@keyframes stage-progress {
-    from {
+    /* Big uppercase display headlines. */
+    .mk-h1 {
+        @apply font-display uppercase;
+        font-size: clamp(3.2rem, 9vw, 7.4rem);
+        line-height: 0.9;
+        letter-spacing: -0.01em;
+    }
+
+    .mk-h2 {
+        @apply font-display uppercase;
+        font-size: clamp(2.6rem, 6vw, 4.75rem);
+        line-height: 0.92;
+        letter-spacing: -0.005em;
+    }
+
+    /* Mono labels: "[ Register 01 ]", "01 — Features". */
+    .mk-label {
+        @apply font-plex text-[13px] font-medium uppercase tracking-[0.18em];
+    }
+
+    .mk-btn {
+        @apply inline-flex min-h-[48px] items-center justify-center gap-2 px-6 font-plex text-[13px] font-semibold uppercase tracking-[0.18em] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-shop-ink;
+    }
+
+    .mk-btn-red {
+        @apply mk-btn bg-brand-700 text-white hover:bg-brand-600;
+    }
+
+    .mk-btn-line {
+        @apply mk-btn border border-current hover:bg-white/10;
+    }
+
+    .mk-btn-ink {
+        @apply mk-btn bg-shop-ink text-shop-paper hover:bg-brand-700;
+    }
+
+    .mk-chip {
+        @apply inline-flex items-center gap-1.5 border px-2.5 py-1 font-plex text-[12px] uppercase tracking-[0.12em];
+    }
+
+    .mk-link {
+        @apply font-plex text-[13px] uppercase tracking-[0.16em] transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500;
+    }
+
+    /* Ticket stub: paper with round notches cut out of both sides. */
+    .mk-ticket {
+        @apply bg-shop-paper text-shop-ink;
+        -webkit-mask:
+            radial-gradient(11px at 0, #0000 98%, #000) 0 / 51% 100% no-repeat,
+            radial-gradient(11px at 100%, #0000 98%, #000) 100% / 51% 100% no-repeat;
+        mask:
+            radial-gradient(11px at 0, #0000 98%, #000) 0 / 51% 100% no-repeat,
+            radial-gradient(11px at 100%, #0000 98%, #000) 100% / 51% 100% no-repeat;
+    }
+
+    /* Hot glow from the bottom right, like a heat lamp. */
+    .mk-heat {
+        background:
+            radial-gradient(120% 70% at 85% 110%, rgb(200 16 46 / 0.55) 0%, rgb(94 7 16 / 0.45) 35%, transparent 70%),
+            linear-gradient(180deg, #0d0b0a 0%, #120a0a 100%);
+    }
+
+    /* A printed dot screen, in the current text color. */
+    .mk-halftone {
+        background-image: radial-gradient(circle, currentColor 1.1px, #0000 1.4px);
+        background-size: 9px 9px;
+    }
+
+    /* Perforation line (tear here). */
+    .mk-perf {
+        background-image: linear-gradient(90deg, currentColor 50%, transparent 0);
+        background-size: 9px 1px;
+        height: 1px;
+    }
+
+    /* Feature rows: a red wipe sweeps in on hover. */
+    .mk-row {
+        isolation: isolate;
+        position: relative;
+    }
+    .mk-row::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(90deg, #c8102e 0%, #5e0710 100%);
         transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.45s cubic-bezier(0.7, 0, 0.2, 1);
     }
-    to {
+    .mk-row:hover::before,
+    .mk-row:focus-within::before {
         transform: scaleX(1);
     }
+
+    /* Order-slip style inputs: no box, just an underline. */
+    .mk-field {
+        @apply block w-full rounded-none border-0 border-b-[1.5px] border-shop-ink/40 bg-transparent px-0 pb-2 pt-1.5 text-[17px] text-shop-ink placeholder:text-shop-ink/45 focus:border-brand-700 focus:ring-0;
+    }
+
+    .mk-marquee {
+        animation: mk-marquee 32s linear infinite;
+    }
 }
 
-@keyframes scan-line {
+@keyframes mk-marquee {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+/* Landing mobile menu: slides down under the nav bar. */
+@keyframes menu-down {
     from {
-        top: 4%;
+        opacity: 0;
+        transform: translateY(-12px);
     }
     to {
-        top: 94%;
+        opacity: 1;
+        transform: none;
     }
 }
 
@@ -243,9 +477,11 @@
         scroll-behavior: auto;
     }
 
-    .js-reveal {
-        opacity: 1;
-        transform: none;
+    .mk-marquee {
+        animation: none;
+    }
+
+    .mk-row::before {
         transition: none;
     }
 

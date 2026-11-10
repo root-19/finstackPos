@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\SubscriptionService;
 use App\Support\Platform;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +18,7 @@ use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class RegisteredUserController extends Controller
 {
@@ -35,7 +35,7 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): HttpResponse
     {
         $request->validate([
             'business_name' => 'required|string|max:255',
@@ -70,6 +70,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // A full page load out of the sign-up page's landing shell into the app.
+        return Inertia::location(route('dashboard', absolute: false));
     }
 }

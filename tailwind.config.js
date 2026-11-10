@@ -1,6 +1,14 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
 
+/**
+ * Theme-able colors: the app's grays, surfaces and light red tints are CSS
+ * variables (defined in app.css), so `html[data-theme="shop"]` can turn the
+ * whole app into the dark "shop floor" look without touching every page.
+ */
+const themed = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+const grays = Object.fromEntries([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((n) => [n, themed(`gray-${n}`)]));
+
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
@@ -16,7 +24,11 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                // The whole system: Archivo for text, Anton for big titles and numbers, IBM Plex Mono for labels.
+                sans: ['Archivo', ...defaultTheme.fontFamily.sans],
+                display: ['Anton', 'Impact', ...defaultTheme.fontFamily.sans],
+                archivo: ['Archivo', ...defaultTheme.fontFamily.sans],
+                plex: ['"IBM Plex Mono"', ...defaultTheme.fontFamily.mono],
             },
             // One step larger than Tailwind's defaults (12px / 14px) for readability.
             fontSize: {
@@ -25,11 +37,12 @@ export default {
             },
             colors: {
                 // Brand red gradient runs from brand-500 to brand-700.
+                gray: grays,
                 brand: {
-                    50: '#FFF1F1',
-                    100: '#FFDFDF',
-                    // 200/300: tints for selected states in the app.
-                    200: '#FFC5C7',
+                    // 50-200: tints for selected states (themed: deep reds on the dark floor).
+                    50: themed('brand-50'),
+                    100: themed('brand-100'),
+                    200: themed('brand-200'),
                     300: '#FF9A9E',
                     400: '#FF5A5A',
                     500: '#FF3030',
@@ -42,8 +55,17 @@ export default {
                     800: '#1A1A1A',
                     700: '#262626',
                 },
-                // App background behind cards and tables.
-                surface: '#F7F8FA',
+                // App background behind cards and tables, and the cards themselves (themed).
+                surface: themed('surface'),
+                card: themed('card'),
+                // Landing + legal pages: a dark "shop floor" with paper sections. Red stays brand-500/700/800.
+                shop: {
+                    ink: '#0D0B0A',
+                    'ink-2': '#161311',
+                    paper: '#EFE8DC',
+                    'paper-2': '#E4DCCD',
+                    ember: '#5E0710',
+                },
             },
             boxShadow: {
                 card: '0 1px 2px 0 rgb(16 24 40 / 0.04)',

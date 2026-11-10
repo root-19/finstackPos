@@ -46,7 +46,7 @@ export default function BarChart({
             <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-label={title}>
                 {ticks.map((t) => (
                     <g key={t}>
-                        <line x1={pad.left} x2={width - pad.right} y1={y(t)} y2={y(t)} stroke={t === 0 ? '#D1D5DB' : '#EDEFF2'} strokeWidth={1} />
+                        <line x1={pad.left} x2={width - pad.right} y1={y(t)} y2={y(t)} stroke="currentColor" className={t === 0 ? 'text-gray-300' : 'text-gray-200'} strokeWidth={1} />
                         <text x={pad.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-gray-500 text-xs">
                             {format(t)}
                         </text>

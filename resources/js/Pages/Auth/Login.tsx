@@ -1,11 +1,5 @@
-import { clearOfflinePageCache } from '@/lib/pwa';
-import Checkbox from '@/Components/Checkbox';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import { Alert, Field } from '@/Components/ui';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { clearOfflinePageCache } from '@/lib/pwa';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler, useEffect } from 'react';
 
@@ -29,62 +23,101 @@ export default function Login({ status, canResetPassword }: { status?: string; c
     };
 
     return (
-        <GuestLayout title="Log in" description="Welcome back. Sign in to your store.">
+        <GuestLayout
+            title="Log in"
+            description="Welcome back. Sign in to your store."
+            slip="Sign-in slip"
+            headline={
+                <>
+                    Welcome
+                    <br />
+                    <span className="text-brand-500">back.</span>
+                </>
+            }
+            footer={
+                <>
+                    New to FinstackPOS?{' '}
+                    <Link href={route('register')} className="font-semibold text-shop-paper underline decoration-brand-500 underline-offset-4 hover:decoration-2">
+                        Create your store
+                    </Link>
+                </>
+            }
+        >
             <Head title="Log in" />
 
             {status && (
-                <Alert tone="green" className="mb-4">
+                <p role="status" className="mb-6 border-l-4 border-brand-700 bg-shop-paper-2 px-4 py-3 text-[15px]">
                     {status}
-                </Alert>
+                </p>
             )}
 
-            <form onSubmit={submit} className="space-y-4">
-                <Field label="Email" htmlFor="email" error={errors.email}>
-                    <TextInput
+            <form onSubmit={submit} className="space-y-6">
+                <div>
+                    <label htmlFor="email" className="mk-label block text-shop-ink/70">
+                        Email
+                    </label>
+                    <input
                         id="email"
                         type="email"
                         name="email"
+                        className="mk-field"
                         value={data.email}
                         autoComplete="username"
-                        isFocused={true}
+                        autoFocus
+                        aria-invalid={errors.email ? true : undefined}
+                        aria-describedby={errors.email ? 'email-error' : undefined}
                         onChange={(e) => setData('email', e.target.value)}
                     />
-                </Field>
+                    {errors.email && (
+                        <p id="email-error" className="mt-1.5 text-sm font-semibold text-brand-800">
+                            {errors.email}
+                        </p>
+                    )}
+                </div>
 
                 <div>
-                    <div className="flex items-center justify-between gap-3">
-                        <InputLabel htmlFor="password" value="Password" />
+                    <div className="flex items-baseline justify-between gap-3">
+                        <label htmlFor="password" className="mk-label block text-shop-ink/70">
+                            Password
+                        </label>
                         {canResetPassword && (
-                            <Link
-                                href={route('password.request')}
-                                className="rounded text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
-                            >
-                                Forgot your password?
+                            <Link href={route('password.request')} className="text-sm font-semibold text-brand-800 underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700">
+                                Forgot password?
                             </Link>
                         )}
                     </div>
-
-                    <TextInput
+                    <input
                         id="password"
                         type="password"
                         name="password"
+                        className="mk-field"
                         value={data.password}
-                        className="mt-1"
                         autoComplete="current-password"
+                        aria-invalid={errors.password ? true : undefined}
+                        aria-describedby={errors.password ? 'password-error' : undefined}
                         onChange={(e) => setData('password', e.target.value)}
                     />
-
-                    <InputError message={errors.password} className="mt-1" />
+                    {errors.password && (
+                        <p id="password-error" className="mt-1.5 text-sm font-semibold text-brand-800">
+                            {errors.password}
+                        </p>
+                    )}
                 </div>
 
-                <label className="flex w-fit cursor-pointer items-center gap-2">
-                    <Checkbox name="remember" checked={data.remember} onChange={(e) => setData('remember', (e.target.checked || false) as false)} />
-                    <span className="text-sm text-gray-700">Remember me</span>
+                <label className="flex min-h-[44px] w-fit cursor-pointer items-center gap-3">
+                    <input
+                        type="checkbox"
+                        name="remember"
+                        checked={data.remember}
+                        onChange={(e) => setData('remember', e.target.checked)}
+                        className="h-5 w-5 rounded-none border-shop-ink/50 bg-transparent text-brand-700 focus:ring-brand-700 focus:ring-offset-shop-paper"
+                    />
+                    <span className="text-[15px]">Remember me</span>
                 </label>
 
-                <PrimaryButton className="w-full" disabled={processing}>
-                    Log in
-                </PrimaryButton>
+                <button type="submit" disabled={processing} className="mk-btn-red w-full disabled:cursor-wait disabled:opacity-70">
+                    {processing ? 'Signing in…' : 'Log in →'}
+                </button>
             </form>
         </GuestLayout>
     );
