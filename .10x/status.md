@@ -5,8 +5,10 @@ Feature: `landing-ui` · Branch: `feature/landing-ui` (from main @ e2910ac + Rol
 | Phase | State |
 |---|---|
 | 0 Brainstorm / spec | Done: user chose "Modern premium" (2026-11-10). Spec + ADR-002 |
-| 4 Build | In progress: page, shell, legal, SEO, tests done; screenshots + og-image pending |
-| 5 Verify | Pending: build, tests, 5 viewports, Lighthouse |
+| 4 Build | Done (see decisions/sde/landing-ui.md) |
+| 5 Verify | Done locally (see decisions/qa/landing-ui.md); production Lighthouse Performance not measured yet |
+| 6 Delivery | Not pushed; waiting for the user |
 
 Abandoned: `feature/landing-receipt` (receipt concept, rejected by the user).
 Decided defaults: no backup claim (none configured); no promo video on the page.
+Found outside scope (not fixed): POS catalog sync bug with soft-deleted categories/products; POS/Orders overflow on narrow screens.
