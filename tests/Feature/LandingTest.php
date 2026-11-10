@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use App\Support\Platform;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -32,10 +33,42 @@ it('prints SEO tags and the marketing fonts on the landing page only', function 
         ->toContain('IBM+Plex+Mono')
         ->not->toContain('id="boot-splash"');
 
-    expect($this->get('/login')->getContent())
+    // App pages keep the app's font and boot splash.
+    expect($this->actingAs(User::factory()->create())->get('/profile')->getContent())
         ->toContain('id="boot-splash"')
         ->not->toContain('og:title')
         ->not->toContain('IBM+Plex+Mono');
+});
+
+it('serves the sign-in and sign-up pages in the landing shell', function (string $path, string $component) {
+    $html = $this->get($path)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component($component))
+        ->getContent();
+
+    expect($html)
+        ->toContain('IBM+Plex+Mono')
+        ->toContain('<link rel="canonical" href="'.rtrim(config('app.url'), '/').$path.'">')
+        ->not->toContain('id="boot-splash"');
+})->with([
+    ['/login', 'Auth/Login'],
+    ['/register', 'Auth/Register'],
+    ['/forgot-password', 'Auth/ForgotPassword'],
+]);
+
+it('leaves the landing shell with a full page load after login and logout', function () {
+    $user = User::factory()->create();
+    $inertia = ['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest'];
+
+    $this->withHeaders($inertia)
+        ->post('/login', ['email' => $user->email, 'password' => 'password'])
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', url('/dashboard'));
+
+    $this->withHeaders($inertia)
+        ->post('/logout')
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', url('/'));
 });
 
 it('serves the draft legal pages', function (string $path, string $component) {

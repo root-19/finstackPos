@@ -35,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,
             'subscribed' => \App\Http\Middleware\EnsureSubscribed::class,
+            // Sign-in/sign-up pages in the landing page's shell (fonts, SEO, no splash).
+            'marketing' => \App\Http\Middleware\ServeAsMarketingPage::class,
             'merchant' => EnsureUserHasMerchant::class,
         ]);
     })
