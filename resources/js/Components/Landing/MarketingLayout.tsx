@@ -33,7 +33,7 @@ export default function MarketingLayout({ children, home = false }: { children: 
         { href: `${prefix}#how`, num: '02', label: 'How it works' },
         { href: `${prefix}#pricing`, num: '03', label: 'Pricing' },
         { href: `${prefix}#book-demo`, num: '04', label: 'Book a demo' },
-        { href: `${prefix}#desktop`, num: '↓', label: 'Download' },
+        { href: '/download', num: '↓', label: 'Download' },
     ];
 
     return (
@@ -106,6 +106,12 @@ function Nav({ links, home }: { links: NavLink[]; home: boolean }) {
                 </nav>
 
                 <div className="flex items-center gap-2">
+                    {/* Always visible, also on phones (the numbered nav folds into the menu below lg). */}
+                    <a href="/download" className="mk-link inline-flex min-h-[44px] items-center gap-2 px-3 text-shop-paper/75 hover:text-shop-paper lg:hidden">
+                        <LineIcon name="arrow" className="h-4 w-4 rotate-90" strokeWidth={2} />
+                        <span className="hidden sm:inline">Download</span>
+                        <span className="sr-only sm:hidden">Download the Windows app</span>
+                    </a>
                     <a href={account.href} className="mk-link hidden min-h-[44px] items-center px-3 text-shop-paper/75 hover:text-shop-paper sm:inline-flex">
                         {account.label}
                     </a>

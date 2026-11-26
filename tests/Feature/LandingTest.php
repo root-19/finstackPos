@@ -92,7 +92,8 @@ it('offers the Windows app only once an installer is published', function () {
     @unlink($file);
 
     $this->get('/')->assertInertia(fn (Assert $page) => $page->where('desktop', null));
-    $this->get('/download/windows')->assertRedirect('/#desktop');
+    $this->get('/download/windows')->assertRedirect('/download');
+    $this->get('/download')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Download')->where('desktop', null));
 
     file_put_contents($file, str_repeat('x', 2048));
 
@@ -102,6 +103,7 @@ it('offers the Windows app only once an installer is published', function () {
             ->where('desktop.size_bytes', 2048)
             ->missing('desktop.path')
         );
+        $this->get('/download')->assertInertia(fn (Assert $page) => $page->where('desktop.version', '9.9.9'));
         $this->get('/download/windows')
             ->assertOk()
             ->assertDownload('FinstackPOS_9.9.9_x64-setup.exe');
