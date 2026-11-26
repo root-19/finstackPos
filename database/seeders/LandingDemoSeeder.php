@@ -517,8 +517,8 @@ class LandingDemoSeeder extends Seeder
                     'employee_id' => $employee->id,
                     'work_date' => $date,
                     'type' => $absent ? 'absent' : 'worked',
-                    'clock_in_at' => $absent ? null : Carbon::createFromFormat('Y-m-d H:i', "$date 07:00", $tz),
-                    'clock_out_at' => $absent ? null : Carbon::createFromFormat('Y-m-d H:i', "$date $out", $tz),
+                    'clock_in_at' => $absent ? null : Carbon::createFromFormat('Y-m-d H:i', "$date 07:00", $tz)->utc(),
+                    'clock_out_at' => $absent ? null : Carbon::createFromFormat('Y-m-d H:i', "$date $out", $tz)->utc(),
                     'break_minutes' => $absent ? 0 : 60,
                     'note' => $absent ? 'Sick leave (unpaid)' : null,
                 ]);
