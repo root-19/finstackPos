@@ -85,3 +85,27 @@ it('serves the draft legal pages', function (string $path, string $component) {
     ['/privacy', 'Legal/Privacy'],
     ['/terms', 'Legal/Terms'],
 ]);
+
+it('offers the Windows app only once an installer is published', function () {
+    $dir = storage_path('app/downloads');
+    $file = $dir.'/FinstackPOS_9.9.9_x64-setup.exe';
+    @unlink($file);
+
+    $this->get('/')->assertInertia(fn (Assert $page) => $page->where('desktop', null));
+    $this->get('/download/windows')->assertRedirect('/#desktop');
+
+    file_put_contents($file, str_repeat('x', 2048));
+
+    try {
+        $this->get('/')->assertInertia(fn (Assert $page) => $page
+            ->where('desktop.version', '9.9.9')
+            ->where('desktop.size_bytes', 2048)
+            ->missing('desktop.path')
+        );
+        $this->get('/download/windows')
+            ->assertOk()
+            ->assertDownload('FinstackPOS_9.9.9_x64-setup.exe');
+    } finally {
+        @unlink($file);
+    }
+});

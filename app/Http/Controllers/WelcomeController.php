@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemoRequest;
+use App\Support\DesktopRelease;
 use App\Support\Platform;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -25,6 +26,8 @@ class WelcomeController extends Controller
                 'free_product_limit' => Platform::freeProductLimit(),
             ],
             'trial' => ['days' => Platform::trialDays()],
+            // The Windows app installer, or null until one is published.
+            'desktop' => DesktopRelease::forPage(),
             // "Book a demo": the same slots and dates the form is validated against.
             'demo' => [
                 'slots' => DemoRequest::slots(),

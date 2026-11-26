@@ -1,4 +1,5 @@
 import Checkbox from '@/Components/Checkbox';
+import DesktopPrinterSettings from '@/Components/DesktopPrinterSettings';
 import { Icon } from '@/Components/NavIcons';
 import PageHeader from '@/Components/PageHeader';
 import { Receipt, ReceiptData } from '@/Components/Receipt';
@@ -177,6 +178,8 @@ export default function SettingsEdit({ settings }: PageProps<{ settings: Setting
                                 />
                             </div>
                         </Section>
+
+                        <DesktopPrinterSettings paperMm={data.receipt_paper_mm} />
 
                         <Section title="VAT" description="Used for every price on the POS.">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
