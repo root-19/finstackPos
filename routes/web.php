@@ -45,6 +45,14 @@ Route::get('/', WelcomeController::class)->name('welcome');
 // "Book a demo" from the landing page (public; limits in AppServiceProvider and DemoRequestController).
 Route::post('/book-demo', [DemoRequestController::class, 'store'])->middleware('throttle:demo-requests')->name('demo.store');
 
+// The Windows desktop app: its page, and the installer itself.
+Route::get('/download', fn () => Inertia::render('Download', [
+    'desktop' => DesktopRelease::forPage(),
+])->withViewData(WelcomeController::meta(
+    'Download FinstackPOS for Windows',
+    'The FinstackPOS register for Windows: receipts print straight to your thermal printer, with cash drawer and auto-cut.',
+    '/download',
+)))->name('download');
 // The Windows desktop app installer (see App\Support\DesktopRelease). Back to
 // the landing section when no installer has been published yet.
 Route::get('/download/windows', function () {
@@ -52,7 +60,7 @@ Route::get('/download/windows', function () {
 
     return $release
         ? response()->download($release['path'], $release['filename'], ['Content-Type' => 'application/vnd.microsoft.portable-executable'])
-        : redirect('/#desktop');
+        : redirect('/download');
 })->middleware('throttle:30,1')->name('download.windows');
 
 // Legal drafts, in the landing page's receipt style.
