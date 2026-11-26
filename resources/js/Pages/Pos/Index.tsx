@@ -7,6 +7,7 @@ import { ProductGridSkeleton } from '@/Components/Skeleton';
 import OrdersBoard from '@/Components/TableOrders/OrdersBoard';
 import { Badge, DialogLayout } from '@/Components/ui';
 import usePosSync from '@/hooks/usePosSync';
+import useScanToSearch from '@/hooks/useScanToSearch';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { displaySupported, DisplayState, terminalId, useDisplayPublisher } from '@/lib/customerDisplay';
 import useHeldOrders from '@/hooks/useHeldOrders';
@@ -23,7 +24,7 @@ import { MerchantSettings, PageProps } from '@/types';
 import { ProductSize, SelectedOption } from '@/types/catalog';
 import { Head } from '@inertiajs/react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import CartPanel from './Partials/CartPanel';
 import CheckoutModal, { PaymentResult } from './Partials/CheckoutModal';
 import DiscountModal, { AppliedDiscount } from './Partials/DiscountModal';
@@ -43,6 +44,7 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
     const deviceBranch = useDeviceBranch(merchant, auth.user);
 
     const [search, setSearch] = useState('');
+    const searchRef = useRef<HTMLInputElement>(null);
     const [categoryId, setCategoryId] = useState<number | null>(null);
     const [cart, setCart] = useState<LocalSaleItem[]>([]);
     const [checkingOut, setCheckingOut] = useState(false);
@@ -51,7 +53,8 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
     const [picking, setPicking] = useState<LocalProduct | null>(null);
     const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
     const [editingDiscount, setEditingDiscount] = useState(false);
-    const [stockNotice, setStockNotice] = useState<{ text: string; blocked: boolean } | null>(null);
+    // A short banner above the product grid: low or missing stock, or a scanned code we don't sell.
+    const [notice, setNotice] = useState<{ text: string; blocked: boolean } | null>(null);
     // Phones and tablets show the cart in a sheet.
     const [cartOpen, setCartOpen] = useState(false);
     const [showDisplayHelp, setShowDisplayHelp] = useState(false);
@@ -79,14 +82,17 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
     const inventory = useMemo(() => inventoryAt(sync.inventory, deviceBranch.branchId), [sync.inventory, deviceBranch.branchId]);
     const blocksSales = merchant.inventory_blocks_sales ?? false;
 
+    // Scanning works wherever the cashier last tapped, not only in the search box.
+    useScanToSearch(searchRef, setSearch);
+
     useEffect(() => {
-        if (!stockNotice) {
+        if (!notice) {
             return;
         }
-        const timer = window.setTimeout(() => setStockNotice(null), 5000);
+        const timer = window.setTimeout(() => setNotice(null), 5000);
 
         return () => window.clearTimeout(timer);
-    }, [stockNotice]);
+    }, [notice]);
 
     const categories = useLiveQuery(() => db.categories.where({ merchant_id: merchantId }).sortBy('name'), [merchantId], []);
 
@@ -141,7 +147,7 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
         if (left !== null && left < 1) {
             const label = `${product.name}${size ? ` (${size.name})` : ''}`;
             const short = shortItems(inventory, cart, product.id, size?.id ?? null).join(', ');
-            setStockNotice({
+            setNotice({
                 text: blocksSales ? `${label} can't be sold: not enough ${short}.` : `Low on ${short} for ${label}. Added anyway; check your stock.`,
                 blocked: blocksSales,
             });
@@ -219,11 +225,29 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
         }
 
         const code = search.trim();
+        if (code === '') {
+            return;
+        }
+
         const match = products.find((p) => p.barcode === code || p.sku === code);
 
         if (match) {
             selectProduct(match);
             setSearch('');
+
+            return;
+        }
+
+        // Nothing matches the code even loosely: almost always a scan of something
+        // this branch doesn't sell. If the text does match products by name, the
+        // cashier can see them in the grid and pick one, so stay quiet.
+        const term = code.toLowerCase();
+        const anyMatch = products.some(
+            (p) => p.name.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term) || p.barcode?.includes(term),
+        );
+
+        if (!anyMatch) {
+            setNotice({ text: `No product found for "${code}". Check the code, or search by name.`, blocked: true });
         }
     };
 
@@ -563,15 +587,15 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
                     </button>
                 )}
 
-                {stockNotice && (
+                {notice && (
                     <div
                         role="status"
                         className={`flex items-center gap-2 border-b px-4 py-2 text-sm font-medium ${
-                            stockNotice.blocked ? 'border-red-200 bg-red-50 text-red-800' : 'border-amber-200 bg-amber-50 text-amber-900'
+                            notice.blocked ? 'border-red-200 bg-red-50 text-red-800' : 'border-amber-200 bg-amber-50 text-amber-900'
                         }`}
                     >
                         <Icon name="warning" />
-                        {stockNotice.text}
+                        {notice.text}
                     </div>
                 )}
 
@@ -581,6 +605,7 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
                             <div className="relative">
                                 <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                 <input
+                                    ref={searchRef}
                                     type="search"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
