@@ -33,6 +33,7 @@ export default function MarketingLayout({ children, home = false }: { children: 
         { href: `${prefix}#how`, num: '02', label: 'How it works' },
         { href: `${prefix}#pricing`, num: '03', label: 'Pricing' },
         { href: `${prefix}#book-demo`, num: '04', label: 'Book a demo' },
+        { href: `${prefix}#desktop`, num: '↓', label: 'Download' },
     ];
 
     return (

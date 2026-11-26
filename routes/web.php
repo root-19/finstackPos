@@ -37,12 +37,23 @@ use App\Http\Controllers\Workforce\MyWorkController;
 use App\Http\Controllers\Workforce\PayrollController;
 use App\Http\Controllers\Workforce\ScheduleGeneratorController;
 use App\Http\Controllers\Workforce\ShiftController;
+use App\Support\DesktopRelease;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', WelcomeController::class)->name('welcome');
 // "Book a demo" from the landing page (public; limits in AppServiceProvider and DemoRequestController).
 Route::post('/book-demo', [DemoRequestController::class, 'store'])->middleware('throttle:demo-requests')->name('demo.store');
+
+// The Windows desktop app installer (see App\Support\DesktopRelease). Back to
+// the landing section when no installer has been published yet.
+Route::get('/download/windows', function () {
+    $release = DesktopRelease::latest();
+
+    return $release
+        ? response()->download($release['path'], $release['filename'], ['Content-Type' => 'application/vnd.microsoft.portable-executable'])
+        : redirect('/#desktop');
+})->middleware('throttle:30,1')->name('download.windows');
 
 // Legal drafts, in the landing page's receipt style.
 Route::get('/privacy', fn () => Inertia::render('Legal/Privacy')->withViewData(WelcomeController::meta(

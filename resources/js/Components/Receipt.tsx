@@ -1,4 +1,6 @@
 import { PaymentMethod } from '@/lib/db';
+import { isDesktop, loadPrinterConfig, printRaw } from '@/lib/desktop';
+import { receiptToEscPos } from '@/lib/escpos';
 import { DISCOUNT_LABELS, PAYMENT_LABELS } from '@/lib/format';
 import { DiscountType, formatMoney, formatPercent } from '@/lib/money';
 import { MerchantSettings } from '@/types';
@@ -32,7 +34,7 @@ export interface ReceiptData {
     change_cents: number;
 }
 
-type ReceiptSettings = Pick<
+export type ReceiptSettings = Pick<
     MerchantSettings,
     | 'name'
     | 'address'
@@ -170,14 +172,37 @@ function Divider() {
  * Prints receipts through the browser's print system, so any printer the
  * computer has a driver for works: USB, Bluetooth or network thermal
  * printers included. Only the receipt is printed (see app.css).
+ *
+ * In the desktop app with a receipt printer chosen (Settings > Desktop
+ * printer), it sends ESC/POS straight to that printer instead: no dialog,
+ * optional auto-cut and cash drawer. If that fails it falls back to the
+ * print dialog so the receipt is never lost.
  */
 export function useReceiptPrinter(settings: ReceiptSettings) {
     const [data, setData] = useState<ReceiptData | null>(null);
 
-    const printReceipt = (receipt: ReceiptData) => {
+    const browserPrint = (receipt: ReceiptData) => {
         // Render the receipt synchronously so it's in the DOM when printing.
         flushSync(() => setData(receipt));
         window.print();
+    };
+
+    const printReceipt = (receipt: ReceiptData) => {
+        const desktop = isDesktop() ? loadPrinterConfig() : null;
+
+        if (!desktop?.printer) {
+            browserPrint(receipt);
+            return;
+        }
+
+        const bytes = receiptToEscPos(receipt, settings, {
+            cut: desktop.cut,
+            openDrawer: desktop.openDrawer && receipt.payment_method === 'cash',
+        });
+        printRaw(desktop.printer, bytes).catch((error) => {
+            console.error('Desktop printing failed, using the print dialog', error);
+            browserPrint(receipt);
+        });
     };
 
     const printer = data
