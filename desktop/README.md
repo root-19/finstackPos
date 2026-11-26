@@ -36,3 +36,27 @@ Edit it and restart the app to point a register at another server or turn on kio
 
 The receipt printer is chosen in the app: **Settings → Desktop receipt printer**. It is
 saved on that PC only. Leave it on "Use the print dialog" for non-thermal printers.
+
+## Releasing an update (auto-update)
+
+Installed apps check `https://finstackpos.shop/desktop/update/...` on launch and offer
+"Update now / Later". Updates are signed; the app only installs files signed with the
+private key that matches the `pubkey` in `tauri.conf.json`.
+
+1. Bump `version` in `src-tauri/tauri.conf.json` (and `Cargo.toml`, `package.json`).
+2. Build with the signing key:
+   ```sh
+   export TAURI_SIGNING_PRIVATE_KEY="$HOME/.tauri/finstackpos-updater.key"
+   export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+   npm run build
+   ```
+3. Upload **both** files from `src-tauri/target/release/bundle/nsis/` to the server's
+   `storage/app/downloads/`: `FinstackPOS_X.Y.Z_x64-setup.exe` and `FinstackPOS_X.Y.Z_x64-setup.exe.sig`.
+   Without the `.sig`, the landing page offers it but installed apps won't update to it.
+
+**Keep `~/.tauri/finstackpos-updater.key` safe and backed up** (password manager or
+offline copy). Never commit it. If it is lost, installed apps can't be updated anymore
+and every PC must reinstall manually.
+
+Web changes (Laravel/React) don't need any of this: deploy the site and every register
+gets them on the next load.

@@ -111,3 +111,35 @@ it('offers the Windows app only once an installer is published', function () {
         @unlink($file);
     }
 });
+
+it('tells installed desktop apps about a newer signed release', function () {
+    $dir = storage_path('app/downloads');
+    $old = $dir.'/FinstackPOS_9.9.8_x64-setup.exe';
+    $new = $dir.'/FinstackPOS_9.9.9_x64-setup.exe';
+    file_put_contents($old, 'old');
+    file_put_contents($old.'.sig', 'sig-old');
+    file_put_contents($new, 'new');
+
+    try {
+        // 9.9.9 has no signature yet: the updater offers the newest signed one.
+        $this->get('/desktop/update/windows/x86_64/9.9.7')->assertOk()->assertJson([
+            'version' => '9.9.8',
+            'signature' => 'sig-old',
+            'url' => route('download.windows', ['version' => '9.9.8']),
+        ]);
+        $this->get('/desktop/update/windows/x86_64/9.9.8')->assertNoContent();
+
+        file_put_contents($new.'.sig', "sig-new\n");
+        $this->get('/desktop/update/windows/x86_64/9.9.8')->assertOk()->assertJson(['version' => '9.9.9', 'signature' => 'sig-new']);
+        $this->get('/desktop/update/windows/x86_64/9.9.9')->assertNoContent();
+        $this->get('/desktop/update/darwin/aarch64/1.0.0')->assertNoContent();
+
+        // Versioned downloads serve exactly that file.
+        $this->get('/download/windows/9.9.8')->assertDownload('FinstackPOS_9.9.8_x64-setup.exe');
+        $this->get('/download/windows/1.2.3')->assertRedirect('/download');
+    } finally {
+        foreach ([$old, $old.'.sig', $new, $new.'.sig'] as $file) {
+            @unlink($file);
+        }
+    }
+});

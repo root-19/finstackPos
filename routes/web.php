@@ -53,15 +53,24 @@ Route::get('/download', fn () => Inertia::render('Download', [
     'The FinstackPOS register for Windows: receipts print straight to your thermal printer, with cash drawer and auto-cut.',
     '/download',
 )))->name('download');
-// The Windows desktop app installer (see App\Support\DesktopRelease). Back to
-// the landing section when no installer has been published yet.
-Route::get('/download/windows', function () {
-    $release = DesktopRelease::latest();
+// The Windows desktop app installer (see App\Support\DesktopRelease): the newest
+// one, or a given version (what the updater downloads). Back to the download
+// page when there is none.
+Route::get('/download/windows/{version?}', function (?string $version = null) {
+    $release = $version === null ? DesktopRelease::latest() : DesktopRelease::find($version);
 
     return $release
         ? response()->download($release['path'], $release['filename'], ['Content-Type' => 'application/vnd.microsoft.portable-executable'])
         : redirect('/download');
-})->middleware('throttle:30,1')->name('download.windows');
+})->where('version', '\d+\.\d+\.\d+')->middleware('throttle:30,1')->name('download.windows');
+
+// Installed desktop apps ask this on launch: 200 with the newer signed release
+// (Tauri updater format), or 204 when they are up to date.
+Route::get('/desktop/update/{target}/{arch}/{current}', function (string $target, string $arch, string $current) {
+    $update = $target === 'windows' && $arch === 'x86_64' ? DesktopRelease::update($current) : null;
+
+    return $update ? response()->json($update) : response()->noContent();
+})->where('current', '\d+\.\d+\.\d+')->middleware('throttle:60,1')->name('desktop.update');
 
 // Legal drafts, in the landing page's receipt style.
 Route::get('/privacy', fn () => Inertia::render('Legal/Privacy')->withViewData(WelcomeController::meta(

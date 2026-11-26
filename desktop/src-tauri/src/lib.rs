@@ -7,6 +7,7 @@
 
 mod config;
 mod printing;
+mod updater;
 
 use tauri::ipc::CapabilityBuilder;
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
@@ -27,6 +28,8 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             app_version,
             printing::list_printers,
@@ -72,6 +75,8 @@ pub fn run() {
                     false
                 })
                 .build()?;
+
+            updater::check_on_launch(app.handle().clone());
 
             Ok(())
         })
