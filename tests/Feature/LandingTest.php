@@ -143,3 +143,15 @@ it('tells installed desktop apps about a newer signed release', function () {
         }
     }
 });
+
+it('shows system details to signed-in store users', function () {
+    $this->get('/system')->assertRedirect('/login');
+
+    // Any store user, even a cashier with no extra permissions.
+    $this->actingAs(staffWith([]))->get('/system')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('System/Index')
+        ->has('server_time')
+        ->has('web_version')
+        ->where('desktop_latest', null)
+    );
+});

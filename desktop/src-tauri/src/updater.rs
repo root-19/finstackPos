@@ -56,3 +56,35 @@ async fn check(app: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+/// For the System details page: what "Update now" would install, if anything.
+#[derive(serde::Serialize)]
+pub struct UpdateInfo {
+    version: String,
+    current_version: String,
+}
+
+#[tauri::command]
+pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
+    let update = app.updater().map_err(|e| e.to_string())?.check().await.map_err(|e| e.to_string())?;
+
+    Ok(update.map(|u| UpdateInfo {
+        version: u.version.clone(),
+        current_version: u.current_version.clone(),
+    }))
+}
+
+/// Download, verify, install and restart. Only returns on failure.
+#[tauri::command]
+pub async fn install_update(app: AppHandle) -> Result<(), String> {
+    let update = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("This app is already up to date.")?;
+
+    update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+    app.restart()
+}
