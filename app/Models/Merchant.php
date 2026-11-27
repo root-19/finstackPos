@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Modules;
 use App\Support\Platform;
 use Database\Factories\MerchantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -102,6 +103,8 @@ class Merchant extends Model
             'subscribed_until' => 'datetime',
             'trial_ends_at' => 'datetime',
             'table_ordering_enabled' => 'boolean',
+            'modules' => 'array',
+            'onboarded_at' => 'datetime',
         ];
     }
 
@@ -203,6 +206,21 @@ class Merchant extends Model
      *
      * @return array<string, mixed>
      */
+    /**
+     * The modules this store uses (Settings → Customize).
+     *
+     * @return list<string>
+     */
+    public function enabledModules(): array
+    {
+        return Modules::withRequirements($this->modules ?? Modules::DEFAULTS);
+    }
+
+    public function hasModule(string $key): bool
+    {
+        return in_array($key, $this->enabledModules(), true);
+    }
+
     public function posSettings(): array
     {
         return [

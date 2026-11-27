@@ -14,6 +14,8 @@ use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Inventory\RecipeController;
 use App\Http\Controllers\Inventory\StockMovementController;
 use App\Http\Controllers\Inventory\SupplierController;
+use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Pos\QrPaymentController;
 use App\Http\Controllers\Pos\SyncController;
@@ -109,18 +111,20 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
     Route::resource('products', ProductController::class)
         ->only(['index', 'store', 'update', 'destroy'])
-        ->middleware('can:products.manage');
+        ->middleware(['module:products', 'can:products.manage']);
     Route::resource('categories', CategoryController::class)
         ->only(['index', 'store', 'update', 'destroy'])
-        ->middleware('can:categories.manage');
+        ->middleware(['module:products', 'can:categories.manage']);
 
-    Route::middleware('can:sales.view')->group(function () {
+    Route::middleware(['module:sales', 'can:sales.view'])->group(function () {
         Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
         Route::get('/sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
     });
 
     // Voids and refunds, from Sales or the register (online only). Who may
     // do them, or needs a manager's PIN, is checked per request.
+    // (The register's own "Find receipt" goes through the POS routes, so it
+    // keeps working when Sales history is turned off.)
     Route::prefix('sales/{sale}')->name('sales.')->group(function () {
         Route::get('/adjust', [SaleAdjustmentController::class, 'show'])->name('adjust');
         Route::post('/void', [SaleAdjustmentController::class, 'void'])->middleware('throttle:20,1')->name('void');
@@ -128,10 +132,10 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
     });
 
     // Reports: each report checks the permission of the page its data comes from.
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports', [ReportController::class, 'index'])->middleware('module:reports')->name('reports.index');
 
     // Inventory: supplies, ingredients, materials, suppliers, and recipes.
-    Route::middleware('can:inventory.manage')->prefix('inventory')->group(function () {
+    Route::middleware(['module:inventory', 'can:inventory.manage'])->prefix('inventory')->group(function () {
         Route::get('/', [InventoryController::class, 'index'])->name('inventory.index');
         Route::post('/', [InventoryController::class, 'store'])->name('inventory.store');
         Route::get('/export', [InventoryController::class, 'export'])->name('inventory.export');
@@ -171,7 +175,7 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
     Route::get('/subscription/checkout/{providerId}', [SubscriptionController::class, 'status'])->middleware('throttle:120,1')->name('subscription.status');
 
     // Branches and what each one earns (owner only, Pro).
-    Route::middleware(['can:settings.manage', 'subscribed'])->group(function () {
+    Route::middleware(['module:branches', 'can:settings.manage', 'subscribed'])->group(function () {
         Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
         Route::post('/branches', [BranchController::class, 'store'])->name('branches.store');
         Route::patch('/branches/staff/{user}', [BranchController::class, 'assign'])->name('branches.assign');
@@ -191,7 +195,17 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
         Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
-        // Tables and their QR codes (taking orders from them is Pro).
+        // Settings → Customize: which modules this store uses.
+        Route::get('/settings/customize', [ModuleController::class, 'edit'])->name('modules.edit');
+        Route::put('/settings/customize', [ModuleController::class, 'update'])->name('modules.update');
+
+        // The setup guide with Fin (new stores).
+        Route::post('/onboarding/finish', [OnboardingController::class, 'finish'])->name('onboarding.finish');
+        Route::post('/onboarding/restart', [OnboardingController::class, 'restart'])->name('onboarding.restart');
+    });
+
+    // Tables and their QR codes (taking orders from them is Pro).
+    Route::middleware(['module:table_orders', 'can:settings.manage'])->group(function () {
         Route::get('/tables', [DiningTableController::class, 'index'])->name('tables.index');
         Route::post('/tables', [DiningTableController::class, 'store'])->name('tables.store');
         Route::post('/tables/bulk', [DiningTableController::class, 'bulk'])->name('tables.bulk');
@@ -202,7 +216,7 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
     });
 
     // Orders from the tables' QR codes, on the POS or any staff phone.
-    Route::middleware('can:pos.sell')->prefix('orders')->name('orders.')->group(function () {
+    Route::middleware(['module:table_orders', 'can:pos.sell'])->prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [TableOrderController::class, 'index'])->name('index');
         Route::get('/feed', [TableOrderController::class, 'feed'])->middleware('throttle:120,1')->name('feed');
         Route::post('/pause', [TableOrderController::class, 'pause'])->middleware('throttle:30,1')->name('pause');
@@ -212,12 +226,12 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
     // Employee management. Salaries, government IDs, payroll, and deductions
     // are owner only; scheduling and attendance can be given to a role.
     Route::prefix('team')->middleware('subscribed')->group(function () {
-        Route::middleware('can:employees.manage')->group(function () {
+        Route::middleware(['module:employees', 'can:employees.manage'])->group(function () {
             Route::resource('employees', EmployeeController::class)->only(['index', 'store', 'update', 'destroy']);
             Route::post('/employees/{employee}/salary', [EmployeeController::class, 'storeSalary'])->name('employees.salary');
         });
 
-        Route::middleware('can:schedules.manage')->group(function () {
+        Route::middleware(['module:scheduling', 'can:schedules.manage'])->group(function () {
             Route::get('/schedule', [ShiftController::class, 'index'])->name('shifts.index');
             Route::post('/shifts', [ShiftController::class, 'store'])->name('shifts.store');
             Route::post('/shifts/publish', [ShiftController::class, 'publish'])->name('shifts.publish');
@@ -228,7 +242,7 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
             Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
         });
 
-        Route::middleware('can:attendance.manage')->group(function () {
+        Route::middleware(['module:attendance', 'can:attendance.manage'])->group(function () {
             Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
             Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
             Route::post('/attendance/review', [AttendanceController::class, 'review'])->name('attendance.review');
@@ -236,7 +250,7 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
             Route::get('/attendance/{record}/history', [AttendanceController::class, 'history'])->name('attendance.history');
         });
 
-        Route::middleware('can:payroll.manage')->group(function () {
+        Route::middleware(['module:payroll', 'can:payroll.manage'])->group(function () {
             Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
             Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store');
             Route::get('/payroll/{run}', [PayrollController::class, 'show'])->name('payroll.show');
@@ -254,7 +268,7 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
     });
 
     // Every employee's own schedule, time clock, and payslips.
-    Route::middleware('subscribed')->group(function () {
+    Route::middleware(['module:employees', 'subscribed'])->group(function () {
         Route::get('/my-work', [MyWorkController::class, 'index'])->name('my-work');
         Route::post('/my-work/clock-in', [MyWorkController::class, 'clockIn'])->middleware('throttle:20,1')->name('my-work.clock-in');
         Route::post('/my-work/clock-out', [MyWorkController::class, 'clockOut'])->middleware('throttle:20,1')->name('my-work.clock-out');
@@ -264,8 +278,10 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
 // Session-cookie auth (HttpOnly) + CSRF via the XSRF-TOKEN cookie that axios
 // sends automatically, so no API token ever has to live in browser storage.
 Route::middleware(['auth', 'verified', 'merchant', 'can:pos.sell'])->prefix('pos')->name('pos.')->group(function () {
-    Route::get('/', [PosController::class, 'index'])->name('index');
-    Route::get('/display', [PosController::class, 'display'])->name('display');
+    // The register's pages follow Settings → Customize. Sync stays open so
+    // sales already queued offline always upload.
+    Route::get('/', [PosController::class, 'index'])->middleware('module:pos')->name('index');
+    Route::get('/display', [PosController::class, 'display'])->middleware('module:pos')->name('display');
     Route::get('/sync/catalog', [SyncController::class, 'catalog'])
         ->middleware('throttle:30,1')
         ->name('sync.catalog');
