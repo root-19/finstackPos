@@ -6,7 +6,9 @@
 //! service worker and IndexedDB queue, exactly as in the browser.
 
 mod config;
+mod display;
 mod printing;
+mod updater;
 
 use tauri::ipc::CapabilityBuilder;
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
@@ -27,12 +29,21 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             app_version,
             printing::list_printers,
             printing::default_printer,
             printing::print_raw,
+            display::open_customer_display,
         ])
+        // Closing the register closes the customer display too.
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                window.app_handle().exit(0);
+            }
+        })
         .setup(|app| {
             let config = config::load(app.handle());
             let start: Url = config
@@ -72,6 +83,8 @@ pub fn run() {
                     false
                 })
                 .build()?;
+
+            updater::check_on_launch(app.handle().clone());
 
             Ok(())
         })

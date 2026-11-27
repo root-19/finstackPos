@@ -68,3 +68,6 @@ export const defaultPrinter = () => invoke<string | null>('default_printer');
 /** Send raw ESC/POS bytes straight to a Windows printer (no dialog). */
 export const printRaw = (printer: string, bytes: Uint8Array) =>
     invoke<void>('print_raw', { printer, data: Array.from(bytes) });
+
+/** Open the customer display on the other monitor, full screen (desktop app 0.3.0+). */
+export const openCustomerDisplayWindow = (url: string) => invoke<void>('open_customer_display', { url });

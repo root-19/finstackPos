@@ -10,6 +10,7 @@ import usePosSync from '@/hooks/usePosSync';
 import useScanToSearch from '@/hooks/useScanToSearch';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { displaySupported, DisplayState, terminalId, useDisplayPublisher } from '@/lib/customerDisplay';
+import { isDesktop, openCustomerDisplayWindow } from '@/lib/desktop';
 import useHeldOrders from '@/hooks/useHeldOrders';
 import { db, HeldOrder, LocalProduct, LocalSale, LocalSaleItem } from '@/lib/db';
 import { prepareResume, ResumeChange } from '@/lib/heldOrders';
@@ -433,7 +434,18 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
     }, [merchant.manual_qr_image_url]);
 
     const openCustomerDisplay = () => {
-        window.open(route('pos.display', { terminal: terminalId() }), 'finstack-customer-display', 'popup=yes,width=1280,height=800');
+        const url = route('pos.display', { terminal: terminalId() });
+        const browserPopup = () => window.open(url, 'finstack-customer-display', 'popup=yes,width=1280,height=800');
+
+        // The desktop app can't open pop-ups; it opens its own window on the second monitor.
+        if (isDesktop()) {
+            openCustomerDisplayWindow(url).catch((error) => {
+                console.error('Desktop customer display failed', error);
+                browserPopup();
+            });
+        } else {
+            browserPopup();
+        }
         setShowDisplayHelp(true);
     };
 
@@ -863,15 +875,23 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
                         </>
                     }
                 >
-                    <ol className="list-decimal space-y-2 pl-5 text-sm text-gray-700">
-                        <li>A new window opened. If nothing appeared, allow pop-ups for this site and choose Open again.</li>
-                        <li>Drag that window onto the customer-facing monitor.</li>
-                        <li>Click Full screen on it (or press F11).</li>
-                        <li>
-                            Keep this register open in the same browser on this computer. The dot on the Customer display button turns green when the
-                            screen is linked.
-                        </li>
-                    </ol>
+                    {isDesktop() ? (
+                        <ol className="list-decimal space-y-2 pl-5 text-sm text-gray-700">
+                            <li>The customer display opened in full screen on your second monitor.</li>
+                            <li>If it opened on this screen instead, check that the second monitor is connected and set to Extend in Windows display settings, then choose Open again.</li>
+                            <li>The dot on the Customer display button turns green when the screen is linked. Closing the register closes the display too.</li>
+                        </ol>
+                    ) : (
+                        <ol className="list-decimal space-y-2 pl-5 text-sm text-gray-700">
+                            <li>A new window opened. If nothing appeared, allow pop-ups for this site and choose Open again.</li>
+                            <li>Drag that window onto the customer-facing monitor.</li>
+                            <li>Click Full screen on it (or press F11).</li>
+                            <li>
+                                Keep this register open in the same browser on this computer. The dot on the Customer display button turns green when the
+                                screen is linked.
+                            </li>
+                        </ol>
+                    )}
                     <p className="mt-4 rounded-lg bg-surface px-3 py-2 text-xs text-gray-600">
                         The display works between windows of this computer, even offline. A separate tablet or device can’t be linked yet.
                     </p>
