@@ -85,6 +85,10 @@ export type PageProps<
         /** A FinstackPOS administrator (the /admin area). */
         isAdmin: boolean;
         can: Abilities | null;
+        /** Modules the store uses (Settings → Customize); see App\Support\Modules. */
+        modules: string[];
+        /** The setup guide with Fin; only for a new store's owner, null once done or skipped. */
+        onboarding: Onboarding | null;
         /** Linked to an employee record, so "My work" (clock, payslips) applies. */
         hasEmployeeProfile: boolean;
         /** The store's plan: Pro (active) unlocks Management and unlimited products. */
@@ -96,3 +100,29 @@ export type PageProps<
         success: string | null;
     };
 };
+
+export interface StoreModule {
+    key: string;
+    label: string;
+    description: string;
+    group: string;
+    pro: boolean;
+    requires: string[];
+}
+
+/** App\Http\Controllers\OnboardingController::props() */
+export interface Onboarding {
+    store: string;
+    modules: StoreModule[];
+    enabled: string[];
+    plan: {
+        price_cents: number;
+        max_months: number;
+        free_product_limit: number;
+        trial_days: number;
+        pro: boolean;
+        on_trial: boolean;
+        until: string | null;
+        can_start_trial: boolean;
+    };
+}

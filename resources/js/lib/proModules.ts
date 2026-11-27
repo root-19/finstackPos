@@ -18,6 +18,8 @@ export interface ProModule {
     permission: Permission;
     /** How the module is described on the Pro plan card. */
     feature: string;
+    /** Its key in Settings → Customize (App\Support\Modules); hidden when turned off. */
+    module: string;
 }
 
 export const PRO_MODULES: ProModule[] = [
@@ -25,6 +27,7 @@ export const PRO_MODULES: ProModule[] = [
         label: 'Branches',
         icon: 'store',
         route: 'branches.index',
+        module: 'branches',
         match: 'branches.*',
         permission: 'settings.manage',
         feature: 'Branches: run more than one store location',
@@ -33,6 +36,7 @@ export const PRO_MODULES: ProModule[] = [
         label: 'Employee List',
         icon: 'employees',
         route: 'employees.index',
+        module: 'employees',
         match: 'employees.*',
         permission: 'employees.manage',
         feature: 'Employee List with staff logins and roles',
@@ -41,6 +45,7 @@ export const PRO_MODULES: ProModule[] = [
         label: 'Employee Scheduling',
         icon: 'schedule',
         route: 'shifts.index',
+        module: 'scheduling',
         match: 'shifts.*',
         permission: 'schedules.manage',
         feature: 'Employee Scheduling and auto-schedule',
@@ -49,6 +54,7 @@ export const PRO_MODULES: ProModule[] = [
         label: 'Attendance & Timesheets',
         icon: 'attendance',
         route: 'attendance.index',
+        module: 'attendance',
         match: 'attendance.*',
         permission: 'attendance.manage',
         feature: 'Attendance & Timesheets',
@@ -57,6 +63,7 @@ export const PRO_MODULES: ProModule[] = [
         label: 'Salary & Payroll',
         icon: 'payroll',
         route: 'payroll.index',
+        module: 'payroll',
         match: 'payroll.*',
         permission: 'payroll.manage',
         feature: 'Salary & Payroll with payslips',
@@ -65,6 +72,7 @@ export const PRO_MODULES: ProModule[] = [
         label: 'Deduction Settings',
         icon: 'deductions',
         route: 'deductions.index',
+        module: 'payroll',
         match: 'deductions.*',
         permission: 'payroll.manage',
         feature: 'Deduction Settings',

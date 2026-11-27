@@ -267,7 +267,8 @@ class TableMenuController extends Controller
         $table = DiningTable::withoutGlobalScopes()->where('token', $token)->first();
         $merchant = $table ? Merchant::find($table->merchant_id) : null;
 
-        abort_if(! $table || ! $merchant?->is_active, 404);
+        // A store that turned off Tables & QR menu has no public menu either.
+        abort_if(! $table || ! $merchant?->is_active || ! $merchant->hasModule('table_orders'), 404);
 
         $branch = Branch::withoutGlobalScopes()->where('merchant_id', $merchant->id)->find($table->branch_id) ?? $merchant->mainBranch();
 

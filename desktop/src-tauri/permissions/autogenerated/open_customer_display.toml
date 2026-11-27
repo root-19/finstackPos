@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-open-customer-display"
+description = "Enables the open_customer_display command without any pre-configured scope."
+commands.allow = ["open_customer_display"]
+
+[[permission]]
+identifier = "deny-open-customer-display"
+description = "Denies the open_customer_display command without any pre-configured scope."
+commands.deny = ["open_customer_display"]

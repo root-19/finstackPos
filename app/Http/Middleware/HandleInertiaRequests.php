@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\Permission;
+use App\Http\Controllers\OnboardingController;
 use App\Models\SupportMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -54,6 +55,10 @@ class HandleInertiaRequests extends Middleware
                     (bool) $request->user()?->merchant_id => SupportMessage::query()->unreadByStore()->count(),
                     default => 0,
                 },
+                // The setup guide with Fin, for a new store's owner (null once done or skipped).
+                'onboarding' => fn () => OnboardingController::props($request),
+                // Modules the store uses (Settings → Customize); the sidebar hides the rest.
+                'modules' => fn () => $request->user()?->merchant?->enabledModules() ?? [],
                 // UI hints only; every route enforces the same gates server-side.
                 'can' => fn () => $request->user()
                     ? collect(Permission::cases())->mapWithKeys(fn (Permission $p) => [$p->value => Gate::allows($p->value)])

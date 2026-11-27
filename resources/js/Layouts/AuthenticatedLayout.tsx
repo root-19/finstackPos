@@ -1,3 +1,4 @@
+import FinGuide from '@/Components/FinGuide';
 import FlashMessage from '@/Components/FlashMessage';
 import ThemeToggle from '@/Components/ThemeToggle';
 import { PageSkeleton } from '@/Components/Skeleton';
@@ -35,16 +36,19 @@ export default function Authenticated({
     /** Content fills the viewport below the top bar (used by the POS). */
     fullHeight?: boolean;
 }>) {
-    const { user, merchant, can, roleName, hasEmployeeProfile, subscription, supportUnread } = usePage().props.auth;
+    const { user, merchant, can, roleName, hasEmployeeProfile, subscription, supportUnread, modules, onboarding } = usePage().props.auth;
+    // Settings → Customize: modules the store turned off don't show at all.
+    const has = (module: string) => (modules ?? []).includes(module);
     const pro = Boolean(subscription?.active);
     const canSell = Boolean(merchant && can?.['pos.sell']);
+    const tableOrdersOn = canSell && Boolean(merchant?.table_ordering) && has('table_orders');
     const [mobileOpen, setMobileOpen] = useState(false);
     const [collapsed, toggleCollapsed] = useSidebarCollapsed();
     const navigating = useNavigationLoading();
     const onPos = route().current('pos.index');
     const online = useOnlineStatus();
     // Any open page receives table orders (the POS and Table Orders poll their own).
-    const watchOrders = canSell && Boolean(merchant?.table_ordering) && !onPos && !route().current('orders.*');
+    const watchOrders = tableOrdersOn && !onPos && !route().current('orders.*');
     const tableOrders = useTableOrders(watchOrders, online, user.branch_id ?? 'all');
     const waitingOrders = watchOrders ? newOrders(tableOrders.feed).length : 0;
 
@@ -58,7 +62,7 @@ export default function Authenticated({
     ];
 
     if (merchant) {
-        if (canSell) {
+        if (canSell && has('pos')) {
             mainNav.push({
                 label: 'Point of Sale',
                 icon: ICONS.pos,
@@ -68,7 +72,7 @@ export default function Authenticated({
             });
         }
 
-        if (canSell && merchant.table_ordering) {
+        if (tableOrdersOn) {
             mainNav.push({
                 label: 'Table Orders',
                 icon: ICONS.tableOrders,
@@ -78,7 +82,7 @@ export default function Authenticated({
             });
         }
 
-        if (can?.['products.manage']) {
+        if (can?.['products.manage'] && has('products')) {
             mainNav.push({
                 label: 'Products',
                 icon: ICONS.products,
@@ -87,7 +91,7 @@ export default function Authenticated({
             });
         }
 
-        if (can?.['categories.manage']) {
+        if (can?.['categories.manage'] && has('products')) {
             mainNav.push({
                 label: 'Categories',
                 icon: ICONS.categories,
@@ -96,7 +100,7 @@ export default function Authenticated({
             });
         }
 
-        if (can?.['sales.view']) {
+        if (can?.['sales.view'] && has('sales')) {
             mainNav.push({
                 label: 'Sales',
                 icon: ICONS.sales,
@@ -105,7 +109,7 @@ export default function Authenticated({
             });
         }
 
-        if (can?.['inventory.manage']) {
+        if (can?.['inventory.manage'] && has('inventory')) {
             mainNav.push({
                 label: 'Inventory',
                 icon: ICONS.inventory,
@@ -114,7 +118,7 @@ export default function Authenticated({
             });
         }
 
-        if (can?.['sales.view'] || can?.['inventory.manage'] || can?.['payroll.manage'] || can?.['schedules.manage'] || can?.['attendance.manage']) {
+        if (has('reports') && (can?.['sales.view'] || can?.['inventory.manage'] || can?.['payroll.manage'] || can?.['schedules.manage'] || can?.['attendance.manage'])) {
             mainNav.push({
                 label: 'Reports',
                 icon: ICONS.reports,
@@ -126,7 +130,7 @@ export default function Authenticated({
 
     // One list drives this section and the Pro card on the Subscription page.
     const managementNav: NavItem[] = merchant
-        ? PRO_MODULES.filter((m) => can?.[m.permission]).map((m) => ({
+        ? PRO_MODULES.filter((m) => can?.[m.permission] && has(m.module)).map((m) => ({
               label: m.label,
               icon: ICONS[m.icon],
               href: route(m.route),
@@ -142,7 +146,7 @@ export default function Authenticated({
     const accountNav: NavItem[] = [];
 
     // My Work is for employees: the owner manages the team instead.
-    if (merchant && pro && hasEmployeeProfile && user.role !== 'owner') {
+    if (merchant && pro && hasEmployeeProfile && user.role !== 'owner' && has('employees')) {
         accountNav.push({
             label: 'My Work',
             icon: ICONS.myWork,
@@ -151,7 +155,7 @@ export default function Authenticated({
         });
     }
 
-    if (merchant && can?.['settings.manage']) {
+    if (merchant && can?.['settings.manage'] && has('table_orders')) {
         accountNav.push({
             label: 'Tables & QR',
             icon: ICONS.qrCode,
@@ -166,6 +170,12 @@ export default function Authenticated({
             icon: ICONS.settings,
             href: route('settings.edit'),
             active: route().current('settings.*'),
+        });
+        accountNav.push({
+            label: 'Customize',
+            icon: ICONS.check,
+            href: route('modules.edit'),
+            active: route().current('modules.*'),
         });
     }
 
@@ -356,6 +366,8 @@ export default function Authenticated({
             </div>
 
             <FlashMessage />
+            {/* New store: Fin's setup guide (owner only, until finished or skipped). */}
+            {onboarding && <FinGuide onboarding={onboarding} />}
 
             {waitingOrders > 0 && (
                 <Link
