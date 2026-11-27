@@ -1,6 +1,5 @@
 import BookDemo, { DemoOptions } from '@/Components/Landing/BookDemo';
 import DesktopApp, { DesktopReleaseInfo } from '@/Components/Landing/DesktopApp';
-import { PhoneFrame } from '@/Components/Landing/DeviceFrames';
 import Faq, { FaqItem } from '@/Components/Landing/Faq';
 import LineIcon from '@/Components/Landing/LineIcon';
 import MarketingLayout, { useVisitor } from '@/Components/Landing/MarketingLayout';
@@ -29,10 +28,11 @@ type Props = PageProps<{
     demo: DemoOptions;
 }>;
 
+/** The hero photo, with the real register and orders board composited onto its screens. */
+const HERO = { src: '/landing/hero-counter.webp', small: '/landing/hero-counter-sm.webp', width: 1750, height: 962 };
+
 /** Screenshots of the real app (demo store), see database/seeders/LandingDemoSeeder.php. */
 const SHOTS = {
-    register: { src: '/landing/register.webp', width: 1180, height: 820 },
-    checkout: { src: '/landing/checkout-gcash.webp', width: 390, height: 844 },
     orders: { src: '/landing/orders.webp', width: 1180, height: 820 },
     inventory: { src: '/landing/inventory.webp', width: 1180, height: 820 },
     payslip: { src: '/landing/payslip.webp', width: 1180, height: 820 },
@@ -127,47 +127,29 @@ function Hero({ trialDays, startHref, startLabel }: { trialDays: number; startHr
                     </ul>
                 </div>
 
-                {/* The live register, as a ticket from the counter. */}
-                <div className="relative mx-auto w-full max-w-[600px] pb-8 pr-6 sm:pr-12">
-                    <div className="mk-ticket px-4 pb-5 pt-4 sm:px-6">
-                        <div className="flex items-center justify-between gap-3">
-                            <p className="mk-label">Register · live</p>
-                            <p className="mk-label flex items-center gap-2 text-shop-ink/70">
-                                <span aria-hidden className="h-2 w-2 rounded-full bg-brand-700" />
-                                Online
-                            </p>
-                        </div>
-                        <div className="mt-3 overflow-hidden border border-shop-ink/80 bg-white">
-                            <img
-                                {...SHOTS.register}
-                                {...({ fetchpriority: 'high' } as object)}
-                                decoding="async"
-                                alt="The FinstackPOS register in a demo café: product tiles like Ensaymada ₱45.00 and Iced Americano ₱110.00, and a current sale of Milk Tea Large, 2 Ensaymada and Turon totaling ₱245.00."
-                                className="block h-auto w-full"
-                            />
-                        </div>
-                        <div aria-hidden className="mk-perf mt-4 text-shop-ink/40" />
-                        <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1.5 font-plex text-[13px]">
-                            {[
-                                ['Payments', 'Cash · QR'],
-                                ['Offline', 'Sells & syncs'],
-                                ['Receipts', '58 / 80 mm'],
-                                ['Total', '₱245.00'],
-                            ].map(([term, value]) => (
-                                <div key={term} className="flex justify-between gap-2 border-b border-shop-ink/15 py-1">
-                                    <dt className="uppercase tracking-[0.12em] text-shop-ink/65">{term}</dt>
-                                    <dd className="font-semibold">{value}</dd>
-                                </div>
-                            ))}
-                        </dl>
+                {/* FinstackPOS at a café counter: the real register and orders board on the screens. */}
+                <figure className="relative mx-auto w-full max-w-[680px]">
+                    <div className="overflow-hidden border border-shop-paper/20 bg-shop-ink shadow-2xl shadow-black/40">
+                        <img
+                            src={HERO.src}
+                            srcSet={`${HERO.small} 875w, ${HERO.src} 1750w`}
+                            sizes="(min-width: 1024px) 680px, 100vw"
+                            width={HERO.width}
+                            height={HERO.height}
+                            {...({ fetchpriority: 'high' } as object)}
+                            decoding="async"
+                            alt="FinstackPOS at a café counter: the register on a touchscreen showing a ₱245.00 sale, next to a receipt printer and an open cash drawer, and the table orders board on a tablet."
+                            className="block h-auto w-full"
+                        />
                     </div>
-                    <PhoneFrame
-                        {...SHOTS.checkout}
-                        alt="Checkout on a phone: amount due ₱245.00, QR · GCash selected, and the store's QR code for the customer to scan."
-                        className="absolute bottom-0 right-0 w-[28%] min-w-[96px] rotate-[4deg]"
-                        loading="lazy"
-                    />
-                </div>
+                    <figcaption className="mk-label mt-3 flex flex-wrap items-center justify-between gap-3 text-shop-paper/60">
+                        <span>fig. 01 — At the counter</span>
+                        <span className="flex items-center gap-2">
+                            <span aria-hidden className="h-2 w-2 rounded-full bg-brand-500" />
+                            Register · tablet · printer · drawer
+                        </span>
+                    </figcaption>
+                </figure>
             </div>
         </section>
     );
