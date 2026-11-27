@@ -71,3 +71,24 @@ export const printRaw = (printer: string, bytes: Uint8Array) =>
 
 /** Open the customer display on the other monitor, full screen (desktop app 0.3.0+). */
 export const openCustomerDisplayWindow = (url: string) => invoke<void>('open_customer_display', { url });
+
+export type DesktopSystemInfo = {
+    app_version: string;
+    tauri_version: string;
+    webview_version: string | null;
+    os: string;
+    arch: string;
+    os_version: string | null;
+    server_url: string;
+    kiosk: boolean;
+};
+
+export type DesktopUpdate = { version: string; current_version: string };
+
+/** Desktop app 0.4.0+. Older apps reject these; the System page then asks for a reinstall. */
+export const desktopSystemInfo = () => invoke<DesktopSystemInfo>('system_info');
+
+export const checkDesktopUpdate = () => invoke<DesktopUpdate | null>('check_update');
+
+/** Downloads, installs and restarts the app; only resolves/rejects on failure. */
+export const installDesktopUpdate = () => invoke<void>('install_update');

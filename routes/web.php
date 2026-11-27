@@ -38,6 +38,7 @@ use App\Http\Controllers\Workforce\PayrollController;
 use App\Http\Controllers\Workforce\ScheduleGeneratorController;
 use App\Http\Controllers\Workforce\ShiftController;
 use App\Support\DesktopRelease;
+use App\Support\WebVersion;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -148,6 +149,15 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
 
         Route::resource('suppliers', SupplierController::class)->only(['index', 'store', 'update', 'destroy']);
     });
+
+    // System details: versions, this device, sync status, desktop app updates.
+    Route::get('/system', function () {
+        return Inertia::render('System/Index', [
+            'web_version' => WebVersion::current(),
+            'server_time' => now()->toIso8601String(),
+            'desktop_latest' => DesktopRelease::forPage(),
+        ]);
+    })->name('system.index');
 
     // Chat with FinstackPOS support (every plan, anyone in the store).
     Route::get('/support', [SupportController::class, 'index'])->name('support.index');

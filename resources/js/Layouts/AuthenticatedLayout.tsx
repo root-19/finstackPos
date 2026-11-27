@@ -188,6 +188,15 @@ export default function Authenticated({
         });
     }
 
+    if (merchant) {
+        accountNav.push({
+            label: 'System details',
+            icon: ICONS.monitor,
+            href: route('system.index'),
+            active: route().current('system.*'),
+        });
+    }
+
     accountNav.push({
         label: 'Profile',
         icon: ICONS.profile,

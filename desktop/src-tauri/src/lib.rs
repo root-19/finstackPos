@@ -19,6 +19,67 @@ fn app_version(app: tauri::AppHandle) -> String {
     app.package_info().version.to_string()
 }
 
+/// For the System details page.
+#[derive(serde::Serialize)]
+struct SystemInfo {
+    app_version: String,
+    tauri_version: &'static str,
+    webview_version: Option<String>,
+    os: &'static str,
+    arch: &'static str,
+    os_version: Option<String>,
+    server_url: String,
+    kiosk: bool,
+}
+
+#[tauri::command]
+fn system_info(app: tauri::AppHandle) -> SystemInfo {
+    let config = config::load(&app);
+
+    SystemInfo {
+        app_version: app.package_info().version.to_string(),
+        tauri_version: tauri::VERSION,
+        webview_version: tauri::webview_version().ok(),
+        os: std::env::consts::OS,
+        arch: std::env::consts::ARCH,
+        os_version: os_version(),
+        server_url: config.server_url,
+        kiosk: config.kiosk,
+    }
+}
+
+/// e.g. "Microsoft Windows [Version 10.0.22621.4317]" (build 22000+ is Windows 11).
+#[cfg(windows)]
+fn os_version() -> Option<String> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+    let out = std::process::Command::new("cmd")
+        .args(["/C", "ver"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+        .ok()?;
+    let text = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    (!text.is_empty()).then_some(text)
+}
+
+#[cfg(not(windows))]
+fn os_version() -> Option<String> {
+    None
+}
+
+/// Permissions build.rs generates for the app commands.
+const APP_PERMISSIONS: &[&str] = &[
+    "allow-app-version",
+    "allow-system-info",
+    "allow-list-printers",
+    "allow-default-printer",
+    "allow-print-raw",
+    "allow-open-customer-display",
+    "allow-check-update",
+    "allow-install-update",
+];
+
 pub fn run() {
     tauri::Builder::default()
         // One register window per PC: a second launch focuses the first.
@@ -33,10 +94,13 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             app_version,
+            system_info,
             printing::list_printers,
             printing::default_printer,
             printing::print_raw,
             display::open_customer_display,
+            updater::check_update,
+            updater::install_update,
         ])
         // Closing the register closes the customer display too.
         .on_window_event(|window, event| {
@@ -53,12 +117,14 @@ pub fn run() {
             let origin = start.origin();
 
             // Let only our own server call the printer commands.
-            app.add_capability(
-                CapabilityBuilder::new("pos-server")
-                    .remote(format!("{}/*", origin.ascii_serialization()))
-                    .window("main")
-                    .permission("core:default"),
-            )?;
+            let mut capability = CapabilityBuilder::new("pos-server")
+                .remote(format!("{}/*", origin.ascii_serialization()))
+                .window("main")
+                .permission("core:default");
+            for permission in APP_PERMISSIONS {
+                capability = capability.permission(*permission);
+            }
+            app.add_capability(capability)?;
 
             let allowed = origin.clone();
             let opener = app.handle().clone();
