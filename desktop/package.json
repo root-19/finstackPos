@@ -1,7 +1,7 @@
 {
     "name": "finstack-pos-desktop",
     "private": true,
-    "version": "0.2.0",
+    "version": "0.3.0",
     "scripts": {
         "icons": "tauri icon ../public/icons/icon-512.png",
         "dev": "tauri dev",

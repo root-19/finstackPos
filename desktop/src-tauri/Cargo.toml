@@ -1,6 +1,6 @@
 [package]
 name = "finstack-pos-desktop"
-version = "0.2.0"
+version = "0.3.0"
 description = "FinstackPOS desktop register"
 edition = "2021"
 

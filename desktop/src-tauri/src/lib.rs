@@ -6,6 +6,7 @@
 //! service worker and IndexedDB queue, exactly as in the browser.
 
 mod config;
+mod display;
 mod printing;
 mod updater;
 
@@ -35,7 +36,14 @@ pub fn run() {
             printing::list_printers,
             printing::default_printer,
             printing::print_raw,
+            display::open_customer_display,
         ])
+        // Closing the register closes the customer display too.
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                window.app_handle().exit(0);
+            }
+        })
         .setup(|app| {
             let config = config::load(app.handle());
             let start: Url = config
