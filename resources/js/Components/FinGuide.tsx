@@ -357,49 +357,60 @@ export default function FinGuide({ onboarding }: { onboarding: Onboarding }) {
     }
 
     return (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="fin-title">
-            <div className="relative flex max-h-[100dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[92vh] sm:rounded-2xl">
-                {/* Progress + skip */}
-                <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-3">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
-                        <div className="h-full rounded-full bg-brand-600 transition-all duration-300" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
-                    </div>
-                    {step !== 'done' && (
-                        <button type="button" className="text-sm font-semibold text-gray-500 hover:text-gray-900" disabled={busy} onClick={() => end(false)}>
-                            Skip setup
-                        </button>
-                    )}
+        // No box behind Fin: he stands on the blurred app, talking through a speech bubble.
+        <div
+            className="fixed inset-0 z-[80] flex flex-col bg-black/35 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fin-title"
+        >
+            {/* Progress + skip, floating on the blur */}
+            <div className="mx-auto flex w-full max-w-4xl items-center gap-4 px-4 pt-4 sm:px-6 sm:pt-6">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/25">
+                    <div className="h-full rounded-full bg-white transition-all duration-300" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
                 </div>
+                {step !== 'done' && (
+                    <button
+                        type="button"
+                        className="rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold text-white ring-1 ring-white/30 hover:bg-white/25"
+                        disabled={busy}
+                        onClick={() => end(false)}
+                    >
+                        Skip setup
+                    </button>
+                )}
+            </div>
 
-                <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-                    {/* Fin */}
-                    <div className="flex shrink-0 items-end justify-center bg-gradient-to-b from-brand-50 to-white px-4 pt-4 sm:w-56 sm:bg-gradient-to-br sm:pt-8">
-                        <img key={pose} src={POSES[pose]} alt="" aria-hidden className="h-32 w-auto object-contain sm:h-72" />
-                    </div>
+            <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col items-center justify-end gap-0 px-4 pb-4 sm:flex-row sm:items-end sm:justify-center sm:gap-2 sm:px-6 sm:pb-10">
+                {/* Fin himself, no background */}
+                <img
+                    key={pose}
+                    src={POSES[pose]}
+                    alt=""
+                    aria-hidden
+                    className="order-2 h-36 w-auto shrink-0 object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.45)] sm:order-1 sm:h-[min(70vh,560px)]"
+                />
 
-                    {/* Speech */}
-                    <div className="flex min-h-0 flex-1 flex-col px-5 py-5 sm:px-7 sm:py-7">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-700">
-                            Fin{questionNo >= 0 ? ` · Question ${questionNo + 1} of ${questions.length}` : ''}
-                        </p>
-                        <h2 id="fin-title" className="mt-1 text-2xl font-extrabold text-gray-900">
-                            {title}
-                        </h2>
-                        <div className="mt-3 min-h-0 flex-1 overflow-y-auto text-[15px] leading-relaxed text-gray-700">{body}</div>
+                {/* Speech bubble */}
+                <div className="relative order-1 mb-3 flex max-h-[62dvh] w-full max-w-xl flex-col rounded-3xl bg-white px-5 py-5 shadow-2xl sm:order-2 sm:mb-24 sm:max-h-[78vh] sm:px-7 sm:py-6">
+                    {/* Tail: points down at Fin on phones, left at Fin on wider screens */}
+                    <span aria-hidden className="absolute -bottom-2 left-1/2 h-5 w-5 -translate-x-1/2 rotate-45 rounded-sm bg-white sm:-left-2 sm:bottom-16 sm:translate-x-0" />
 
-                        <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-4">
-                            {index > 0 && step !== 'done' && (
-                                <button type="button" className="btn btn-ghost mr-auto" onClick={back}>
-                                    Back
-                                </button>
-                            )}
-                            {step === 'done' && (
-                                <button type="button" className="btn btn-ghost mr-auto" onClick={back}>
-                                    Back
-                                </button>
-                            )}
-                            {actions}
-                        </div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-700">
+                        Fin{questionNo >= 0 ? ` · Question ${questionNo + 1} of ${questions.length}` : ''}
+                    </p>
+                    <h2 id="fin-title" className="mt-1 text-2xl font-extrabold text-gray-900">
+                        {title}
+                    </h2>
+                    <div className="mt-3 min-h-0 flex-1 overflow-y-auto text-[15px] leading-relaxed text-gray-700">{body}</div>
+
+                    <div className="relative mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-4">
+                        {index > 0 && (
+                            <button type="button" className="btn btn-ghost mr-auto" onClick={back}>
+                                Back
+                            </button>
+                        )}
+                        {actions}
                     </div>
                 </div>
             </div>
