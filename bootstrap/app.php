@@ -38,6 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // Sign-in/sign-up pages in the landing page's shell (fonts, SEO, no splash).
             'marketing' => \App\Http\Middleware\ServeAsMarketingPage::class,
             'merchant' => EnsureUserHasMerchant::class,
+            // One rate-limit counter per route (Laravel's default shares one per user).
+            'throttle' => \App\Http\Middleware\ThrottlePerRoute::class,
             // Pages of a module the store can turn off (Settings → Customize).
             'module' => \App\Http\Middleware\EnsureModuleEnabled::class,
         ]);
