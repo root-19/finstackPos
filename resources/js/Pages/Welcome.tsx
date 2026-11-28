@@ -272,7 +272,7 @@ function HowItWorks({ maxMonths }: { maxMonths: number }) {
         { title: 'Your data stays yours', body: "Each store's data is kept separate. Employees' government IDs are encrypted, owner only. Export inventory and stock history to CSV." },
         { title: 'The register keeps selling', body: 'Offline sales are saved on the device and sync by themselves when the internet is back.' },
         { title: 'No hidden fees', body: `Pro is prepaid with QR Ph, 1 to ${maxMonths} months at a time, with no auto-renewal.` },
-        { title: 'Honest about BIR', body: 'Receipts show your TIN and VAT, but FinstackPOS is not yet BIR-accredited. Check with your RDO.' },
+        { title: 'BIR accreditation in process', body: 'Receipts show your TIN and VAT. Our BIR accreditation is in process; until it is approved, check with your RDO.' },
     ];
 
     return (
@@ -525,7 +525,7 @@ function FaqSection({ trialDays, maxMonths }: { trialDays: number; maxMonths: nu
         },
         {
             q: 'Are the receipts BIR official receipts?',
-            a: 'FinstackPOS prints itemized sales receipts with your TIN and VAT breakdown. It is not yet BIR-accredited, so check with your RDO before using its receipts as official receipts.',
+            a: 'FinstackPOS prints itemized sales receipts with your TIN and VAT breakdown. Our BIR accreditation is in process and not yet approved, so check with your RDO before using its receipts as official receipts.',
         },
     ];
 

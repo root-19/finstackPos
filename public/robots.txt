@@ -1,2 +1,10 @@
 User-agent: *
-Disallow:
+# The signed-in app: nothing for search engines there.
+Disallow: /admin
+Disallow: /pos
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /download/windows
+Allow: /
+
+Sitemap: https://finstackpos.shop/sitemap.xml

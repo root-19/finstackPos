@@ -179,6 +179,11 @@ export default function SettingsEdit({ settings }: PageProps<{ settings: Setting
                             </div>
                         </Section>
 
+                        <Alert tone="amber" title="BIR accreditation: in process">
+                            FinstackPOS receipts show your TIN and VAT breakdown. Our BIR accreditation is in process and not yet approved, so check
+                            with your RDO before using these receipts as official receipts. We’ll let you know here once it’s approved.
+                        </Alert>
+
                         <DesktopPrinterSettings paperMm={data.receipt_paper_mm} />
 
                         <Section title="VAT" description="Used for every price on the POS.">

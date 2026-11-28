@@ -1,6 +1,6 @@
 import { MerchantSettings } from '@/types';
 import { isAxiosError } from 'axios';
-import { db, LocalCategory, LocalProduct, LocalSale, PosInventory } from './db';
+import { db, LocalCategory, LocalProduct, LocalSale, LocalShift, PosInventory } from './db';
 
 interface CatalogResponse {
     merchant: MerchantSettings;
@@ -22,6 +22,44 @@ export type SyncResult =
 
 const BATCH_SIZE = 50;
 const KEEP_SYNCED_SALES_DAYS = 14;
+
+/**
+ * Upload shifts that changed on this register (opened, cash moved, closed).
+ * A shift is sent whole; it is only marked uploaded if it didn't change
+ * again while the request was out.
+ */
+async function pushShifts(merchantId: number): Promise<void> {
+    const pending = await db.shifts.where('[merchant_id+sync_status]').equals([merchantId, 'pending']).toArray();
+    if (pending.length === 0) {
+        return;
+    }
+
+    const stamp = (s: LocalShift) => `${s.cash_moves.length}|${s.closed_at ?? ''}`;
+    const sent = new Map(pending.map((s) => [s.id, stamp(s)]));
+
+    const { data } = await window.axios.post<SalesResponse>(route('pos.sync.shifts'), {
+        shifts: pending.slice(0, BATCH_SIZE).map((s) => ({
+            client_uuid: s.id,
+            terminal: s.terminal,
+            branch_id: s.branch_id,
+            opened_at: s.opened_at,
+            opening_cash_cents: s.opening_cash_cents,
+            cash_moves: s.cash_moves,
+            closed_at: s.closed_at,
+            counted_cash_cents: s.counted_cash_cents,
+            closed_by: s.closed_by,
+        })),
+    });
+
+    await db.transaction('rw', db.shifts, async () => {
+        for (const id of data.synced) {
+            const now = await db.shifts.get(id);
+            if (now && stamp(now) === sent.get(id)) {
+                await db.shifts.update(id, { sync_status: 'synced' });
+            }
+        }
+    });
+}
 
 /** Upload queued sales, oldest first, until the queue is empty. */
 async function pushSales(merchantId: number): Promise<void> {
@@ -72,6 +110,7 @@ async function pushSales(merchantId: number): Promise<void> {
 function toPayload(sale: LocalSale) {
     return {
         client_uuid: sale.client_uuid,
+        shift_uuid: sale.shift_id ?? null,
         branch_id: sale.branch_id ?? null,
         sold_at: sale.sold_at,
         payment_method: sale.payment_method,
@@ -167,6 +206,8 @@ async function run(merchantId: number): Promise<SyncResult> {
     }
 
     try {
+        // Shifts first, so every sale finds its shift on the server.
+        await pushShifts(merchantId);
         await pushSales(merchantId);
         await pullCatalog(merchantId);
         await pruneSyncedSales(merchantId);

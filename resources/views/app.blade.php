@@ -10,7 +10,8 @@
             <script>try { if (localStorage.getItem('finstack-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
         @endunless
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        {{-- Marketing pages: the page's own title in the HTML itself, for crawlers (no SSR). --}}
+        <title inertia>{{ isset($meta) ? $meta['title'] : config('app.name', 'Laravel') }}</title>
 
         <!-- PWA -->
         <link rel="manifest" href="/manifest.webmanifest">
@@ -35,6 +36,30 @@
             <meta name="twitter:title" content="{{ $meta['title'] }}">
             <meta name="twitter:description" content="{{ $meta['description'] }}">
             <meta name="twitter:image" content="{{ $meta['image'] }}">
+            @if (request()->is('/'))
+                {{-- Structured data for search results. Only what is true: a free plan, PHP, web + Windows. --}}
+                <script type="application/ld+json">{!! json_encode([
+                    '@context' => 'https://schema.org',
+                    '@graph' => [
+                        [
+                            '@type' => 'Organization',
+                            'name' => 'FinstackPOS',
+                            'url' => $meta['url'],
+                            'logo' => rtrim($meta['url'], '/').'/logo.png',
+                        ],
+                        [
+                            '@type' => 'SoftwareApplication',
+                            'name' => 'FinstackPOS',
+                            'url' => $meta['url'],
+                            'description' => $meta['description'],
+                            'applicationCategory' => 'BusinessApplication',
+                            'operatingSystem' => 'Web, Windows, Android, iOS',
+                            'inLanguage' => 'en-PH',
+                            'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'PHP', 'description' => 'Free plan'],
+                        ],
+                    ],
+                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+            @endif
         @endisset
 
         {{-- Fonts (Archivo, Anton, IBM Plex Mono) are self-hosted: resources/css/fonts.css, bundled by Vite. --}}

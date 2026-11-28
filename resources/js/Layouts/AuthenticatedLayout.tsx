@@ -109,6 +109,15 @@ export default function Authenticated({
             });
         }
 
+        if (can?.['sales.view'] && has('cash_shifts')) {
+            mainNav.push({
+                label: 'Shifts',
+                icon: ICONS.attendance,
+                href: route('cash-shifts.index'),
+                active: route().current('cash-shifts.*'),
+            });
+        }
+
         if (can?.['inventory.manage'] && has('inventory')) {
             mainNav.push({
                 label: 'Inventory',

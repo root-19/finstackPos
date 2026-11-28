@@ -33,7 +33,7 @@ export default function Terms() {
             <section>
                 <h2>4. Receipts and taxes</h2>
                 <p>
-                    FinstackPOS prints itemized sales receipts. It is not yet accredited by the Bureau of Internal Revenue (BIR). Check
+                    FinstackPOS prints itemized sales receipts. Its accreditation by the Bureau of Internal Revenue (BIR) is in process and not yet approved. Check
                     with your Revenue District Office before using its receipts as official receipts. Payroll deductions (SSS,
                     PhilHealth, Pag-IBIG, withholding tax) use rates you can edit; check them against current rules.
                 </p>

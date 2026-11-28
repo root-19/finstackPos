@@ -49,7 +49,7 @@ class WelcomeController extends Controller
      */
     public static function meta(string $title, string $description, string $path): array
     {
-        $base = rtrim((string) config('app.url'), '/');
+        $base = self::baseUrl();
 
         return [
             'marketing' => true,
@@ -60,5 +60,33 @@ class WelcomeController extends Controller
                 'image' => $base.'/og-image.png',
             ],
         ];
+    }
+
+    /**
+     * The site's public address for canonical links, sharing and the sitemap.
+     * APP_URL, unless it still says localhost in production (a fresh .env):
+     * then the address the request came in on, so search engines never get
+     * told the "real" page is on localhost.
+     */
+    public static function baseUrl(): string
+    {
+        $configured = rtrim((string) config('app.url'), '/');
+        $host = parse_url($configured, PHP_URL_HOST);
+
+        if (app()->isProduction() && in_array($host, [null, 'localhost', '127.0.0.1'], true) && app()->bound('request')) {
+            return rtrim(request()->getSchemeAndHttpHost(), '/');
+        }
+
+        return $configured;
+    }
+
+    /** sitemap.xml: the public pages search engines should index. */
+    public function sitemap(): \Illuminate\Http\Response
+    {
+        $base = self::baseUrl();
+        $pages = ['/' => '1.0', '/download' => '0.8', '/register' => '0.6', '/privacy' => '0.3', '/terms' => '0.3'];
+        $urls = collect($pages)->map(fn ($priority, $path) => '  <url><loc>'.e($base.($path === '/' ? '/' : $path)).'</loc><changefreq>weekly</changefreq><priority>'.$priority.'</priority></url>')->implode("\n");
+
+        return response('<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n".$urls."\n</urlset>\n", 200, ['Content-Type' => 'application/xml']);
     }
 }

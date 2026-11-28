@@ -28,6 +28,13 @@ class Modules
             'pro' => false,
             'requires' => ['products'],
         ],
+        'cash_shifts' => [
+            'label' => 'Shifts & cash count',
+            'description' => 'Cashiers open the register with a starting float and close it with a cash count, so you see if the drawer is over or short.',
+            'group' => 'Selling',
+            'pro' => false,
+            'requires' => ['pos'],
+        ],
         'products' => [
             'label' => 'Products & Categories',
             'description' => 'What you sell, with prices, sizes, photos and barcodes.',
@@ -102,7 +109,7 @@ class Modules
 
     /** What a store that never customized has: everything that exists today. */
     public const DEFAULTS = [
-        'pos', 'products', 'sales', 'table_orders', 'inventory', 'reports',
+        'pos', 'cash_shifts', 'products', 'sales', 'table_orders', 'inventory', 'reports',
         'branches', 'employees', 'scheduling', 'attendance', 'payroll',
     ];
 

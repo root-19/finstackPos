@@ -27,6 +27,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SaleAdjustmentController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\CashShiftController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SuggestionController;
@@ -47,6 +48,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', WelcomeController::class)->name('welcome');
+Route::get('/sitemap.xml', [WelcomeController::class, 'sitemap'])->name('sitemap');
 // "Book a demo" from the landing page (public; limits in AppServiceProvider and DemoRequestController).
 Route::post('/book-demo', [DemoRequestController::class, 'store'])->middleware('throttle:demo-requests')->name('demo.store');
 
@@ -131,6 +133,12 @@ Route::middleware(['auth', 'verified', 'merchant'])->group(function () {
         Route::get('/adjust', [SaleAdjustmentController::class, 'show'])->name('adjust');
         Route::post('/void', [SaleAdjustmentController::class, 'void'])->middleware('throttle:20,1')->name('void');
         Route::post('/refunds', [SaleAdjustmentController::class, 'refund'])->middleware('throttle:20,1')->name('refund');
+    });
+
+    // Cash shifts: who opened and closed each register, and whether the drawer was over or short.
+    Route::middleware(['module:cash_shifts', 'can:sales.view'])->group(function () {
+        Route::get('/cash-shifts', [CashShiftController::class, 'index'])->name('cash-shifts.index');
+        Route::get('/cash-shifts/{shift}', [CashShiftController::class, 'show'])->name('cash-shifts.show');
     });
 
     // Reports: each report checks the permission of the page its data comes from.
@@ -294,6 +302,13 @@ Route::middleware(['auth', 'verified', 'merchant', 'can:pos.sell'])->prefix('pos
     Route::post('/sync/sales', [SyncController::class, 'sales'])
         ->middleware('throttle:60,1')
         ->name('sync.sales');
+    // Cash shifts from the register (offline too, like sales) and a shift's report.
+    Route::post('/sync/shifts', [SyncController::class, 'shifts'])
+        ->middleware('throttle:60,1')
+        ->name('sync.shifts');
+    Route::get('/shifts/{uuid}/report', [SyncController::class, 'shiftReport'])
+        ->middleware('throttle:60,1')
+        ->name('shifts.report');
     // "Find receipt", to void or refund from the register.
     Route::get('/receipts', [SaleAdjustmentController::class, 'lookup'])
         ->middleware('throttle:60,1')

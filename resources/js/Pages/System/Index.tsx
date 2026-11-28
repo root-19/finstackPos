@@ -199,6 +199,7 @@ function WebCard({ webVersion, serverTime, storeName }: { webVersion: string | n
                     rows={[
                         ['Store', storeName],
                         ['Web version', webVersion ? <code className="font-plex">{webVersion}</code> : null],
+                        ['BIR accreditation', <Badge tone="amber">In process</Badge>],
                         ['Server time', new Date(serverTime).toLocaleString()],
                         [
                             'This device’s clock',
