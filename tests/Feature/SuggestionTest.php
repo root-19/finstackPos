@@ -77,3 +77,19 @@ it('shows admins every suggestion with its store, sender and plan, and lets them
     // Store users can't open the admin list.
     $this->actingAs($owner)->get('/admin/suggestions')->assertForbidden();
 });
+
+it('gives every throttled route its own counter, so polling never blocks a form', function () {
+    $user = staffWith([]);
+
+    // Use up far more than the suggestions limit (10/min) on another throttled route.
+    for ($i = 0; $i < 15; $i++) {
+        $this->actingAs($user)->getJson('/subscription/checkout/nope');
+    }
+    $this->actingAs($user)->post('/suggestions', ['category' => 'pos', 'title' => 'Still works'])->assertRedirect();
+
+    // The route's own limit still applies.
+    for ($i = 0; $i < 9; $i++) {
+        $this->actingAs($user)->post('/suggestions', ['category' => 'pos', 'title' => "Idea {$i}"]);
+    }
+    $this->actingAs($user)->post('/suggestions', ['category' => 'pos', 'title' => 'One too many'])->assertStatus(429);
+});
