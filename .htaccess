@@ -20,8 +20,10 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Block app folders that must never be served directly
-    RewriteRule ^(app|bootstrap|config|database|node_modules|resources|routes|storage|tests|vendor|\.git|\.claude|\.10x)(/|$) - [F,L]
+    # Block app folders that must never be served directly. Not `storage`: /storage/... is the public
+    # uploads link (product photos, store QR); the rule below sends it to public/storage, which only
+    # points at storage/app/public, so logs and the rest of storage/ stay unreachable.
+    RewriteRule ^(app|bootstrap|config|database|node_modules|resources|routes|tests|vendor|\.git|\.claude|\.10x)(/|$) - [F,L]
 
     # Send everything to the public/ folder
     RewriteCond %{REQUEST_URI} !^/public/
