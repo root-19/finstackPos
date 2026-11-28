@@ -52,3 +52,17 @@ it('refuses a missing email or a short password', function () {
     adminEnv(['ADMIN_EMAIL' => 'x@example.com', 'ADMIN_PASSWORD' => 'short']);
     expect(fn () => $this->seed(AdminSeeder::class))->toThrow(RuntimeException::class);
 });
+
+it('sends an administrator without a store to the admin area instead of a 403', function () {
+    $admin = User::factory()->create();
+    $admin->forceFill(['is_admin' => true, 'merchant_id' => null])->save();
+
+    $this->actingAs($admin)->get('/pos')->assertRedirect('/admin');
+    $this->actingAs($admin)->get('/settings/customize')->assertRedirect('/admin');
+    $this->actingAs($admin)->get('/dashboard')->assertRedirect('/admin');
+    $this->actingAs($admin)->getJson('/products')->assertForbidden();
+
+    // Store users without a store still get the 403.
+    $nobody = User::factory()->create();
+    $this->actingAs($nobody)->get('/pos')->assertForbidden();
+});
