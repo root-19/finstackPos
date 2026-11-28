@@ -22,6 +22,7 @@ export default function AdminLayout({ header, children }: PropsWithChildren<{ he
         { label: 'Stores', icon: ICONS.store, href: route('admin.stores.index'), active: route().current('admin.stores.*') },
         { label: 'Subscriptions', icon: ICONS.cash, href: route('admin.subscriptions'), active: route().current('admin.subscriptions') },
         { label: 'Support', icon: ICONS.chat, href: route('admin.support.index'), active: route().current('admin.support.*'), badge: supportUnread },
+        { label: 'Suggestions', icon: ICONS.plus, href: route('admin.suggestions.index'), active: route().current('admin.suggestions.*') },
         { label: 'Pricing', icon: ICONS.tag, href: route('admin.pricing'), active: route().current('admin.pricing') },
     ];
 
