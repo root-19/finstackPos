@@ -316,16 +316,26 @@
  * Receipt printing (see useReceiptPrinter): on screen the receipt stays
  * hidden; when printing, it is the only thing on the page.
  */
-#receipt-print {
+#receipt-print,
+#report-print {
     display: none;
 }
 
 @media print {
-    body > :not(#receipt-print) {
+    body > :not(#receipt-print):not(#report-print) {
         display: none !important;
     }
 
     #receipt-print {
+        display: block;
+    }
+
+    /* A shift report prints alone, even with a receipt still on the page. */
+    body.printing-report #receipt-print {
+        display: none;
+    }
+
+    body.printing-report #report-print {
         display: block;
     }
 

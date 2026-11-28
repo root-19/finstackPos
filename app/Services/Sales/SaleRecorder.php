@@ -128,6 +128,7 @@ class SaleRecorder
                 ]);
                 $sale->merchant()->associate($merchant);
                 $sale->user()->associate($user);
+                $sale->cash_shift_id = $data['cash_shift_id'] ?? null;
                 $sale->branch_id = $branchId;
                 $sale->save();
 

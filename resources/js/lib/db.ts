@@ -84,6 +84,8 @@ export interface LocalSale {
     sold_at: string;
     /** Where it was sold (unset on sales queued before branches). */
     branch_id?: number | null;
+    /** The register's cash shift it was rung up in (unset with shifts turned off). */
+    shift_id?: string | null;
     sync_status: SaleSyncStatus;
     sync_error: string | null;
     synced_at: string | null;
@@ -124,6 +126,37 @@ export interface HeldOrder {
     updated_at: string;
 }
 
+/** Cash moved into or out of the drawer during a shift, with a reason. */
+export interface CashMove {
+    id: string;
+    type: 'in' | 'out';
+    amount_cents: number;
+    reason: string;
+    at: string;
+    user_id: number;
+}
+
+/**
+ * A cashier's shift on this register: opened with a starting float, closed
+ * with a blind count. Lives here first (works offline) and is uploaded whole
+ * whenever it changes; see lib/shifts.
+ */
+export interface LocalShift {
+    id: string;
+    merchant_id: number;
+    branch_id: number | null;
+    terminal: string;
+    opened_by: number;
+    opened_by_name: string;
+    opened_at: string;
+    opening_cash_cents: number;
+    cash_moves: CashMove[];
+    closed_at: string | null;
+    closed_by: number | null;
+    counted_cash_cents: number | null;
+    sync_status: 'pending' | 'synced';
+}
+
 export interface SyncState {
     merchant_id: number;
     /** Server time of the last successful catalog pull. */
@@ -139,6 +172,7 @@ class FinstackDB extends Dexie {
     sales!: EntityTable<LocalSale, 'client_uuid'>;
     syncState!: EntityTable<SyncState, 'merchant_id'>;
     heldOrders!: EntityTable<HeldOrder, 'id'>;
+    shifts!: EntityTable<LocalShift, 'id'>;
 
     constructor() {
         super('finstack-pos');
@@ -170,6 +204,11 @@ class FinstackDB extends Dexie {
         // indexed: IndexedDB can't index a null, and a store holds few tabs.
         this.version(5).stores({
             heldOrders: 'id, merchant_id, held_at',
+        });
+
+        // v6: cash shifts (open register, cash in/out, blind count). Nothing to re-pull.
+        this.version(6).stores({
+            shifts: 'id, merchant_id, [merchant_id+terminal], [merchant_id+sync_status], opened_at',
         });
     }
 }

@@ -33,6 +33,10 @@ import HeldOrdersModal from './Partials/HeldOrdersModal';
 import HoldOrderModal from './Partials/HoldOrderModal';
 import SizePickerModal from './Partials/SizePickerModal';
 import RejectedSalesModal from './Partials/RejectedSalesModal';
+import { CashMoveModal, CloseShiftModal, OpenShiftModal, shiftMoney, shiftReport, ShiftPanel } from './Partials/ShiftModals';
+import { useReportPrinter } from '@/Components/ReportPrint';
+import { closeShift, fetchServerReport, moveCash, openShift as startShift, ServerShiftReport, ShiftSummary, summarize, useOpenShift, useShiftSales } from '@/lib/shifts';
+import { LocalShift } from '@/lib/db';
 
 export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ merchant: MerchantSettings }>) {
     const merchantId = pageMerchant.id;
@@ -43,6 +47,21 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
     const { printReceipt, printer } = useReceiptPrinter(merchant);
     // Where this register sells (every sale records it).
     const deviceBranch = useDeviceBranch(merchant, auth.user);
+
+    // Cash shifts (Settings → Customize → Shifts & cash count): a shift must be
+    // open on this register before selling; every sale records it.
+    const shiftsOn = (auth.modules ?? []).includes('cash_shifts');
+    const terminal = useMemo(() => terminalId(), []);
+    const shift = useOpenShift(merchantId, terminal);
+    const shiftSales = useShiftSales(merchantId, shift?.id);
+    const shiftSummary = useMemo(() => (shift ? summarize(shift, shiftSales) : null), [shift, shiftSales]);
+    const shiftCash = shiftMoney(merchant.currency);
+    const { printReport, reportPrinter } = useReportPrinter(merchant.receipt_paper_mm);
+    const [shiftOpen, setShiftOpen] = useState(false);
+    const [moveType, setMoveType] = useState<'in' | 'out' | null>(null);
+    const [countingClose, setCountingClose] = useState(false);
+    const [closed, setClosed] = useState<{ shift: LocalShift; summary: ShiftSummary; counted: number; expected: number; server: ServerShiftReport | null } | null>(null);
+    const needShift = shiftsOn && shift === null && closed === null;
 
     const [search, setSearch] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
@@ -274,6 +293,7 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
             change_cents: amountPaid - total,
             sold_at: new Date().toISOString(),
             branch_id: deviceBranch.branchId,
+            shift_id: shiftsOn ? (shift?.id ?? null) : null,
             sync_status: 'pending',
             sync_error: null,
             synced_at: null,
@@ -463,6 +483,8 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
             onHold={() => setHolding(true)}
             onCharge={() => {
                 setCartOpen(false);
+                // No shift open: the open-shift dialog is already up.
+                if (needShift) return;
                 setCheckingOut(true);
             }}
             onEditDiscount={() => setEditingDiscount(true)}
@@ -509,6 +531,13 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
                 )}
             </div>
             <div className="ms-auto flex shrink-0 items-center gap-1.5">
+                {shiftsOn && shift && (
+                    <button type="button" onClick={() => setShiftOpen(true)} className="btn btn-secondary btn-sm" title="This register's cash shift">
+                        <Icon name="attendance" />
+                        <span className="hidden md:inline">Shift</span>
+                        {shift.sync_status === 'pending' && <span className="h-2 w-2 rounded-full bg-amber-500" aria-label="not uploaded yet" />}
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={() => setHeldOpen(true)}
@@ -972,6 +1001,66 @@ export default function PosIndex({ auth, merchant: pageMerchant }: PageProps<{ m
             </Modal>
 
             {printer}
+            {reportPrinter}
+
+            {/* Cash shifts */}
+            <OpenShiftModal
+                show={needShift}
+                userName={auth.user.name}
+                money={shiftCash}
+                onOpen={async (cents) => {
+                    await startShift({ merchantId, branchId: deviceBranch.branchId, terminal, user: auth.user, openingCashCents: cents });
+                    void sync.syncNow();
+                }}
+            />
+            <ShiftPanel
+                show={shiftOpen && !countingClose}
+                shift={shift ?? null}
+                summary={shiftSummary}
+                money={shiftCash}
+                onClose={() => setShiftOpen(false)}
+                onMove={(type) => setMoveType(type)}
+                onPrint={() => shift && shiftSummary && printReport(shiftReport('x', shift, shiftSummary, merchant, shiftCash))}
+                onCloseShift={() => setCountingClose(true)}
+            />
+            <CashMoveModal
+                type={moveType}
+                money={shiftCash}
+                onClose={() => setMoveType(null)}
+                onSave={async (cents, reason) => {
+                    if (!shift) return;
+                    await moveCash(shift.id, { type: moveType ?? 'in', amountCents: cents, reason, userId: auth.user.id });
+                    setMoveType(null);
+                    void sync.syncNow();
+                }}
+            />
+            <CloseShiftModal
+                show={countingClose || closed !== null}
+                money={shiftCash}
+                expectedCents={closed?.expected ?? null}
+                server={closed?.server ?? null}
+                closing={closed ? { counted: closed.counted } : null}
+                onCancel={() => setCountingClose(false)}
+                onCount={async (cents) => {
+                    if (!shift || !shiftSummary) return;
+                    const snapshot = { shift: { ...shift, closed_at: new Date().toISOString(), counted_cash_cents: cents }, summary: shiftSummary };
+                    await closeShift(shift.id, cents, auth.user.id);
+                    setClosed({ ...snapshot, counted: cents, expected: shiftSummary.cash.expectedCents, server: null });
+                    setCountingClose(false);
+                    setShiftOpen(false);
+                    // Online: upload now and show the server's figures (voids, cash refunds).
+                    if (sync.online) {
+                        await sync.syncNow();
+                        const server = await fetchServerReport(shift.id);
+                        if (server) setClosed((c) => (c ? { ...c, server, expected: server.cash.expected_cents } : c));
+                    }
+                }}
+                onPrint={() =>
+                    closed &&
+                    printReport(shiftReport('close', closed.shift, closed.summary, merchant, shiftCash, { counted: closed.counted, expected: closed.expected }))
+                }
+                onDone={() => setClosed(null)}
+            />
 
             <RejectedSalesModal
                 show={showRejected}

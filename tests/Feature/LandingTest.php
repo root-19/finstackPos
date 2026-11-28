@@ -155,3 +155,23 @@ it('shows system details to signed-in store users', function () {
         ->where('desktop_latest', null)
     );
 });
+
+it('serves a sitemap and puts the page title and structured data in the HTML', function () {
+    $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml')
+        ->assertSee(rtrim(config('app.url'), '/').'/download', false);
+
+    $html = $this->get('/')->assertOk()->getContent();
+    expect($html)
+        ->toContain('<title inertia>FinstackPOS: POS, inventory and payroll for Philippine small businesses</title>')
+        ->toContain('application/ld+json')
+        ->toContain('"@type":"SoftwareApplication"');
+});
+
+it('never uses localhost as the public address in production', function () {
+    config(['app.url' => 'http://localhost']);
+    app()->detectEnvironment(fn () => 'production');
+
+    $html = $this->get('https://finstackpos.shop/')->getContent();
+    expect($html)->toContain('<link rel="canonical" href="https://finstackpos.shop/">')
+        ->not->toContain('http://localhost/og-image.png');
+});

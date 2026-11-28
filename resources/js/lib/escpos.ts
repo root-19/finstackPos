@@ -250,3 +250,36 @@ export function testPageEscPos(paperMm: number, options: EscPosOptions): Uint8Ar
 export function drawerKickEscPos(): Uint8Array {
     return Uint8Array.from([...CMD.init, ...CMD.drawer]);
 }
+
+/** One line of a printed report: a heading, a left/right pair, plain text, or a divider. */
+export type ReportRow = { heading: string } | { left: string; right: string; bold?: boolean } | { text: string } | 'divider';
+
+/** X-reading, shift report and other register reports, as ESC/POS. */
+export function reportToEscPos(title: string, subtitle: string[], rows: ReportRow[], paperMm: number, options: EscPosOptions): Uint8Array {
+    const b = new Builder(lineWidth(paperMm));
+
+    b.raw(CMD.boldOn);
+    b.centered(title.toUpperCase());
+    b.raw(CMD.boldOff);
+    subtitle.forEach((s) => b.centered(s));
+    b.divider();
+    for (const row of rows) {
+        if (row === 'divider') {
+            b.divider();
+        } else if ('heading' in row) {
+            b.raw(CMD.boldOn);
+            b.lines(wrap(toAscii(row.heading.toUpperCase()), b.width));
+            b.raw(CMD.boldOff);
+        } else if ('text' in row) {
+            b.lines(wrap(toAscii(row.text), b.width));
+        } else {
+            if (row.bold) b.raw(CMD.boldOn);
+            b.pair(row.left, row.right);
+            if (row.bold) b.raw(CMD.boldOff);
+        }
+    }
+    b.line();
+    b.centered(`Printed ${new Date().toLocaleString()}`);
+
+    return b.finish(options);
+}
