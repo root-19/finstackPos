@@ -181,6 +181,15 @@ export default function Authenticated({
 
     if (merchant) {
         accountNav.push({
+            label: 'Suggest a feature',
+            icon: ICONS.plus,
+            href: route('suggestions.index'),
+            active: route().current('suggestions.*'),
+        });
+    }
+
+    if (merchant) {
+        accountNav.push({
             label: 'Support',
             icon: ICONS.chat,
             href: route('support.index'),
